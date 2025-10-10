@@ -9,7 +9,6 @@ from .models.user import Base, User, UserRepository, get_user_repository
 
 from .api import app
 
-
 @pytest.fixture(scope='function')
 def engine():
     engine = create_engine("sqlite:///:memory:?check_same_thread=False")
@@ -51,9 +50,6 @@ def created_user(session):
         print("SqlAlchemyError:", e)
         session.rollback()
     return user_data
-# ,
-#                      ("INSERT INTO users (email) VALUES (:email)"),
-#                        ("INSERT INTO users (password) VALUES (:password)"), 
 
 def test_read_user(client, created_user):
     response = client.get("/users/foo")
@@ -71,15 +67,6 @@ def test_create_user(client):
     assert response.json() == {
         "user": {"name": "ppp", "id": 100, "email": "ppp@gmail.com", "password": "ppp"}
     }
-    #     "user": {"name": "ppp", "id": -1, "email": "ppp@gmail.com", "password": "ppp"}
-    #  body = response.json()
-    # assert body["user"]["name"] == "foobar"
-    # assert body["user"]["email"] == "foobar@gmail.com"
-    # assert isinstance(body["user"]["id"], int)
-    # assert "password" not in body["user"]
-    #     assert response.json()["user"]["name"] == "bbb"
-    # assert response.json()["user"]["email"] == "bbb@gmail.com"
-    # assert "id" in response.json()["user"]
 
 def test_create_existing_user(client, created_user):
     response = client.post(
