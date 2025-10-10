@@ -51,26 +51,6 @@ def created_user(session):
         session.rollback()
     return user_data
 
-# def created_users(session):
-#     user_data1 = {"name": "foob", "id": 2, "email": "foob@gmail.com", "password": "fooby"}
-#     user_data2 = {"name": "foog", "id": 3, "email": "foog@gmail.com", "password": "foogy"}
-#     user_data3 = {"name": "foop", "id": 4, "email": "foop@gmail.com", "password": "foopy"}
-#     try:
-#         for user_data0 in [user_data1, user_data2, user_data3]:
-#             session.execute(text("INSERT INTO users (name, id, email, password) " \
-#             "VALUES (:name, :id, :email, :password)"), user_data0)
-#         session.commit()
-#     except IntegrityError as e:
-#         print("IntegrityError:", e)
-#         session.rollback()
-#     except OperationalError as e:
-#         print("OperationalError:", e)
-#         session.rollback()
-#     except SQLAlchemyError as e:
-#         print("SqlAlchemyError:", e)
-#         session.rollback()
-#     return user_data1, user_data2, user_data3
-
 @pytest.fixture(scope='function')
 def created_user2(session):
     user_data2 = {"name": "foob", "id": 2, "email": "foob@gmail.com", "password": "fooby"}
@@ -87,15 +67,6 @@ def created_user2(session):
         print("SqlAlchemyError:", e)
         session.rollback()
     return user_data2
-
-# def test_read_users(client, created_user):
-#     extra_users = created_users
-#     all_users = [created_user, extra_users]
-#     response = client.get("/users/")
-#     assert response.status_code == 200
-#     assert response.json() == {
-#         "user": all_users
-#     }
 
 def test_read_users(client, created_user, created_user2):
     users = [created_user, created_user2]
