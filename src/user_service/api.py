@@ -8,7 +8,6 @@ import logging
 from admin.main import ui
 from .models.user import UserRepository, UserSchema, get_user_repository
 
-
 logger = logging.getLogger('uvicorn.error')
 app = FastAPI()
 

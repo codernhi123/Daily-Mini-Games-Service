@@ -25,16 +25,6 @@ class UserRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    # async def create(self, name: str, email: str, password: str) -> User:
-    #     if id < 0:
-    #         result = self.session.execute(insert(User), [{"name": name, "id": id, "email": email, "password": password}])
-    #         self.session.commit()
-    #         return User(name=name, id=id, email=email, password=password)
-    #     else:
-    #         result = self.session.execute(insert(User), [{"name": name, "email": email, "password": password}])
-    #         self.session.commit()
-    #         return User(name=name, email=email, password=password)
-
     async def create(self, name: str, email: str, password: str) -> User:
         result = self.session.execute(insert(User), [{"name": name, "email": email, "password": password}])
         self.session.commit()
@@ -45,16 +35,6 @@ class UserRepository:
         self.session.commit()
         return User(name=name, id=id, email=email, password=password)
     
-    # async def create(self, name: str, id: int, email: str, password: str) -> User:
-    #     result = self.session.execute(insert(User), [{"name": name, "id": id, "email": email, "password": password}])
-    #     self.session.commit()
-    #     return User(name=name, id=id, email=email, password=password)
-        
-    # async def create(self, name: str, email: str, password: str) -> User:
-    #     result = self.session.execute(insert(User), [{"name": name, "email": email, "password": password}])
-    #     self.session.commit()
-    #     return User(name=name, email=email, password=password)
-
     async def delete(self, name: str) -> None:
         user = await self.get_by_name(name)
         stmt = delete(User).where(User.name == name)
@@ -80,36 +60,6 @@ class UserRepository:
 def get_user_repository(db: Session = Depends(get_db)) -> UserRepository:
     return UserRepository(db)
 
-# class UserDisplaySchema(BaseModel):
-#     """
-#     The application's view of users. This is how the API represents users (as opposed to how the database represents them).
-#     """
-#     name: str
-#     id: int 
-#     email: str
-#     # password: str | None = None
-
-#     @classmethod
-#     def from_db_model(cls, user: User) -> "UserDisplaySchema":
-#         """Display a UserDisplaySchema from a User"""
-#         return cls(name=user.name, id=user.id, email=user.email)
-#     # Vid=getattr(user, "id", None),
-    
-# class UserInputSchema(BaseModel):
-#     """
-#     The application's view of users. This is how the API represents users (as opposed to how the database represents them).
-#     """
-#     name: str
-#     # id: int | None = None
-#     email: str
-#     password: str  #security risk, seperate into two create vs read schema
-
-#     @classmethod
-#     def from_db_model(cls, user: User) -> "UserInputSchema":
-#         """Create a UserInputSchema from a User"""
-#         return cls(name=user.name, email=user.email, password=user.password)
-
-
 class UserSchema(BaseModel):
     """
     The application's view of users. This is how the API represents users (as opposed to how the database represents them).
@@ -122,5 +72,4 @@ class UserSchema(BaseModel):
     @classmethod
     def from_db_model(cls, user: User) -> "UserSchema":
         """Create a UserSchema from a User"""
-    #    return cls(name=user.name, id=getattr(user, "id", None), email=getattr(user, "email", None), password=getattr(user, "password", None))
         return cls(name=user.name, id=user.id, email=user.email, password=user.password)
