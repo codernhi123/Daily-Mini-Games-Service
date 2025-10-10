@@ -35,18 +35,7 @@ async def list_users(user_repo: UserRepository = Depends(get_user_repository)):
 @app.get("/users/{name}")
 async def get_user(name: str, user_repo: UserRepository = Depends(get_user_repository)):
     user = await user_repo.get_by_name(name)
-    if not user:
-        return HTTPException(status_code=404, detail="Empty fields not allowed")
     return {"user": user}
-
-# @app.get("/users/{name}")
-# async def get_user(name: str, response: Response, user_repo: UserRepository = Depends(get_user_repository)):
-#     try: 
-#         user = await user_repo.get_by_name(name)
-#     except AssertionError as e:
-#         response.status_code = 404
-#         return {"detail": "User not found"}
-#     return {"user": user}
 
 ui.run_with(app,
             mount_path="/admin",
