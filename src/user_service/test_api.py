@@ -137,8 +137,8 @@ def test_empty_field(client, created_user):
         "/users/",
         json={"name": "sss", "id": "", "email": "", "password": ""}
     )
-    assert response.status_code == "422"
+    assert response.status_code == 422
 
 def test_nonexisting_user(client, created_user):
     response = client.get("/users/nonexistent")
-    assert response.status_code == "200"
+    assert response.status_code == 200
