@@ -15,7 +15,7 @@ app = FastAPI()
 @app.post("/users/", status_code=201)
 async def create_user(user: UserSchema, response: Response, user_repo: UserRepository = Depends(get_user_repository)):
     try:
-        new_user = await user_repo.create_with_id(user.name)
+        new_user = await user_repo.create_with_id(user.name, user.id, user.email, user.password)
         return {"user": UserSchema.from_db_model(new_user)}
     except IntegrityError as e:
         response.status_code = 409

@@ -36,14 +36,14 @@ class UserRepository:
     #         return User(name=name, email=email, password=password)
 
     async def create(self, name: str, email: str, password: str) -> User:
-        result = self.session.execute(insert(User), [{"name": name}])
+        result = self.session.execute(insert(User), [{"name": name, "email": email, "password": password}])
         self.session.commit()
         return User(name=name, email=email, password=password)
         
     async def create_with_id(self, name: str, id: id, email: str, password: str) -> User:
-        result = self.session.execute(insert(User), [{"name": name}])
+        result = self.session.execute(insert(User), [{"name": name, "id": id, "email": email, "password": password}])
         self.session.commit()
-        return User(name=name)
+        return User(name=name, id=id, email=email, password=password)
     
     # async def create(self, name: str, id: int, email: str, password: str) -> User:
     #     result = self.session.execute(insert(User), [{"name": name, "id": id, "email": email, "password": password}])
@@ -69,6 +69,8 @@ class UserRepository:
 
     async def get_by_name(self, name: str) -> User: #could update to be more efficient for larger tables
         """Get user by name"""
+        user = next((u for u in await self.get_all() if u.name == name), None)
+        return user
     
     async def get_by_id(self, id: int) -> User:
         """Get user by id"""
