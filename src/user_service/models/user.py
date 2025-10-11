@@ -15,7 +15,7 @@ class User(Base):
     name: Mapped[str] = mapped_column(String, primary_key=True)
     id: Mapped[int] = mapped_column(Integer, unique=True)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-    password: Mapped[str] = mapped_column(String, nullable=False) #maybe hash later or do in API
+    password: Mapped[str] = mapped_column(String, nullable=False) #maybe hash later, here or in API
 
 class UserRepository:
     """
@@ -47,12 +47,7 @@ class UserRepository:
         users = self.session.scalars(select(User)).all()
         return users
 
-    # async def get_by_name(self, name: str) -> User: #could update to be more efficient for larger tables
-    #     """Get user by name"""
-    #     user = next((u for u in await self.get_all() if u.name == name), None)
-    #     return user
-    
-    async def get_by_name(self, name: str) -> User | None: #could update to be more efficient for larger tables
+    async def get_by_name(self, name: str) -> User | None:
         """Get user by name"""
         stmt = select(User).where(User.name == name)
         result = self.session.scalar(stmt)
@@ -73,7 +68,7 @@ class UserSchema(BaseModel):
     name: str
     id: int
     email: str
-    password: str #security risk, sperate into two create vs read schema
+    password: str #security risk, potentially seperate into two create vs read schema
 
     @classmethod
     def from_db_model(cls, user: User) -> "UserSchema":
