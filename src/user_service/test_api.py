@@ -79,19 +79,17 @@ def created_20000_users(client):
 
 def test_created_20000_users(client, created_20000_users):
     start_time = time.time() 
-    response = client.get("/users/user0")
+    response = client.get("/users/user5000")
     end_time = time.time()
     time_elapsed = end_time - start_time
     print(time_elapsed)
     assert response.status_code == 200
-    assert response.json() == {"user": {"name": f"user0", "id": 0, "email": "user0@email.com", "password": "passord0"}}
+    assert response.json() == {"user": {"name": f"user5000", "id": 5000, "email": "user5000@email.com", "password": "passord5000"}}
     assert time_elapsed < 0.127
     
 def test_read_users(client, created_user, created_user2):
     users = [created_user, created_user2]
     response = client.get("/all_users/")
-    # print(response.json())
-    # print({'users': users})
     assert response.status_code == 200
     assert response.json() == {
         'users': users
