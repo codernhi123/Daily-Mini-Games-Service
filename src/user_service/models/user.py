@@ -47,10 +47,16 @@ class UserRepository:
         users = self.session.scalars(select(User)).all()
         return users
 
-    async def get_by_name(self, name: str) -> User: #could update to be more efficient for larger tables
+    # async def get_by_name(self, name: str) -> User: #could update to be more efficient for larger tables
+    #     """Get user by name"""
+    #     user = next((u for u in await self.get_all() if u.name == name), None)
+    #     return user
+    
+    async def get_by_name(self, name: str) -> User | None: #could update to be more efficient for larger tables
         """Get user by name"""
-        user = next((u for u in await self.get_all() if u.name == name), None)
-        return user
+        stmt = select(User).where(User.name == name)
+        result = self.session.scalar(stmt)
+        return result
     
     async def get_by_id(self, id: int) -> User:
         """Get user by id"""
