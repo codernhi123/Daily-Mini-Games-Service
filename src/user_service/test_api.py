@@ -1,4 +1,5 @@
 import pytest
+import time
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -68,6 +69,24 @@ def created_user2(session):
         session.rollback()
     return user_data2
 
+@pytest.fixture(scope='function')
+def created_20000_users(client):
+    user = []
+    for i in range(20000):
+        client.post("/users/", json = {"name": f"user{i}", "id": i, "email": f"user{i}@email.com", "password": f"passord{i}"})
+        user.append({"name": f"user{i}", "id": i, "email": f"user{i}@email.com", "password": f"passord{i}"})
+    return user
+
+def test_created_20000_users(client, created_20000_users):
+    start_time = time.time() 
+    response = client.get("/users/user0")
+    end_time = time.time()
+    time_elapsed = end_time - start_time
+    print(time_elapsed)
+    assert response.status_code == 200
+    assert response.json() == {"user": {"name": f"user0", "id": 0, "email": "user0@email.com", "password": "passord0"}}
+    assert time_elapsed < 0.127
+    
 def test_read_users(client, created_user, created_user2):
     users = [created_user, created_user2]
     response = client.get("/all_users/")
@@ -113,3 +132,5 @@ def test_empty_field(client, created_user):
 def test_nonexisting_user(client, created_user):
     response = client.get("/users/nonexistent")
     assert response.status_code == 200
+
+    
