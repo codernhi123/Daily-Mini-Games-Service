@@ -131,4 +131,15 @@ def test_nonexisting_user(client, created_user):
     response = client.get("/users/nonexistent")
     assert response.status_code == 200
 
+def test_deleting_user(client):
+    name = "Jack"
+    response = client.post(
+        "/users/",
+        json={"name": name, "id": 100, "email": "jack@gmail.com", "password": "jackjack"}
+    )
+    assert response.status_code == 201
+    
+    response = client.post("/users/delete", json = {"name": name, "id": 100, "email": "jack@gmail.com", "password": "jackjack"})
+    assert response.status_code == 200
+    assert response.json() == {"message": f"User '{name}' deleted successfully."}
     
