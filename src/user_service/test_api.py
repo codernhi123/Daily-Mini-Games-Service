@@ -142,4 +142,15 @@ def test_deleting_user(client):
     response = client.post("/users/delete", json = {"name": name, "id": 100, "email": "jack@gmail.com", "password": "jackjack"})
     assert response.status_code == 200
     assert response.json() == {"message": f"User '{name}' deleted successfully."}
+
+def test_deleting_user_fail(client):
+    nameToDelete = "Jack"
+    response = client.post(
+        "/users/",
+        json={"name": "Sam", "id": 100, "email": "jack@gmail.com", "password": "jackjack"}
+    )
+    assert response.status_code == 201
     
+    response = client.post("/users/delete", json = {"name": nameToDelete, "id": 100, "email": "jack@gmail.com", "password": "jackjack"})
+    assert response.status_code == 200
+    assert response.json() == {"message": f"User '{nameToDelete}' does not exist."}
