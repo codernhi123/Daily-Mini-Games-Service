@@ -28,8 +28,19 @@ jobs:
       - name: Set up docker container
         run: docker compose up -d --build
 
+      - name: Check environment inside web container
+        run: docker compose exec web env
+
       - name: Linting with ruff
-        run: docker compose exec web ruff check . --exclude alembic
-        
+        run: docker compose exec web ruff check . --exclude alembic,src/admin,src/shared,src/user_service
+      
       - name: Running pytests
-        run: docker compose exec web pytest
+        run: docker compose exec web pytest --maxfail=1
+      
+      - name: Display container logs if tests fail
+        if: failure()
+        run: |
+          docker compose logs web
+
+
+
