@@ -9,7 +9,6 @@ import copy
 
 from user_service.models.user import UserRepository, UserSchema, get_user_repository
 
-
 logger = logging.getLogger('uvicorn.error')
 
 @ui.refreshable
@@ -31,7 +30,7 @@ async def user_list(user_repo: UserRepository) -> None:
                 ui.notify(f"Deleted user '{user['name']}'")
             else:
                 ui.notify(f"Unable to delete user `{user['name']}'")
-            # have to refresh to see updates???
+            # have to refresh to see updates
 
     button = ui.button(on_click=delete, icon='delete')
 
@@ -44,8 +43,9 @@ async def user_list(user_repo: UserRepository) -> None:
         else:
             button.disable()
 
-
-    columns = [{'name': 'name', 'label': 'Name', 'field': 'name', 'required': True, 'align': 'left'}]
+    columns = [{'name': 'name', 'label': 'Name', 'field': 'name', 'required': True, 'align': 'left'}, 
+               {'name': 'id', 'label': 'ID', 'field': 'id', 'required': True, 'align': 'left'}, 
+               {'name': 'email', 'label': 'Email', 'field': 'email', 'align': 'left'}]
     table = ui.table(columns=columns, rows=users,
                      row_key='name',
                      on_select=toggle_delete_button)
@@ -55,14 +55,18 @@ async def user_list(user_repo: UserRepository) -> None:
 @ui.page("/")
 async def index(user_repo: UserRepository = Depends(get_user_repository)):
     async def create() -> None:
-        await user_repo.create(name=name.value)
+        await user_repo.create(name=name.value, email=email.value, password=password.value)
         name.value = ""
+        email.value = ""
+        password.value = ""
         user_list.refresh()
 
     with ui.column().classes('mx-auto'):
         # tailwind
         with ui.row().classes('w-full items-center px-4'):
             name = ui.input(label='Name')
-            ui.button(on_click=create, icon='add')
+            email = ui.input(label='Email')
+            password = ui.input(label='Password')
+            ui.button(icon='add').on('click', create)
         await user_list(user_repo)
 
