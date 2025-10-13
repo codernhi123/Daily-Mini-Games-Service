@@ -1,13 +1,14 @@
 import pytest
+import time
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
 from sqlalchemy import create_engine, text
 
 from .models.user import Base, User, UserRepository, get_user_repository
 
 from .api import app
-
 
 @pytest.fixture(scope='function')
 def engine():
@@ -36,10 +37,63 @@ def client(repo):
 
 @pytest.fixture(scope='function')
 def created_user(session):
-    user_data = {"name": "foo"}
-    session.execute(text("INSERT INTO users (name) VALUES (:name)"), user_data)
-    session.commit()
+    user_data = {"name": "foo", "id": 1, "email": "foo@gmail.com", "password": "fooy"}
+    try:
+        session.execute(text("INSERT INTO users (name, id, email, password) VALUES (:name, :id, :email, :password)"), user_data)
+        session.commit()
+    except IntegrityError as e:
+        print("IntegrityError:", e)
+        session.rollback()
+    except OperationalError as e:
+        print("OperationalError:", e)
+        session.rollback()
+    except SQLAlchemyError as e:
+        print("SqlAlchemyError:", e)
+        session.rollback()
     return user_data
+
+@pytest.fixture(scope='function')
+def created_user2(session):
+    user_data2 = {"name": "foob", "id": 2, "email": "foob@gmail.com", "password": "fooby"}
+    try:
+        session.execute(text("INSERT INTO users (name, id, email, password) VALUES (:name, :id, :email, :password)"), user_data2)
+        session.commit()
+    except IntegrityError as e:
+        print("IntegrityError:", e)
+        session.rollback()
+    except OperationalError as e:
+        print("OperationalError:", e)
+        session.rollback()
+    except SQLAlchemyError as e:
+        print("SqlAlchemyError:", e)
+        session.rollback()
+    return user_data2
+
+@pytest.fixture(scope='function')
+def created_20000_users(client):
+    user = []
+    for i in range(20000):
+        client.post("/users/", json = {"name": f"user{i}", "id": i, "email": f"user{i}@email.com", "password": f"passord{i}"})
+        user.append({"name": f"user{i}", "id": i, "email": f"user{i}@email.com", "password": f"passord{i}"})
+    return user
+
+def test_created_20000_users(client, created_20000_users):
+    start_time = time.time() 
+    response = client.get("/users/user5000")
+    end_time = time.time()
+    time_elapsed = end_time - start_time
+    print(time_elapsed)
+    assert response.status_code == 200
+    assert response.json() == {"user": {"name": f"user5000", "id": 5000, "email": "user5000@email.com", "password": "passord5000"}}
+    assert time_elapsed < 0.127
+    
+def test_read_users(client, created_user, created_user2):
+    users = [created_user, created_user2]
+    response = client.get("/all_users/")
+    assert response.status_code == 200
+    assert response.json() == {
+        'users': users
+    }
 
 def test_read_user(client, created_user):
     response = client.get("/users/foo")
@@ -51,13 +105,12 @@ def test_read_user(client, created_user):
 def test_create_user(client):
     response = client.post(
         "/users/",
-        json={"name": "foobar"},
+        json={"name": "bbb", "id": 100, "email": "bbb@gmail.com", "password": "bbb"}
     )
     assert response.status_code == 201
     assert response.json() == {
-        "user": {"name": "foobar"}
+        "user": {"name": "bbb", "id": 100, "email": "bbb@gmail.com", "password": "bbb"}
     }
-
 
 def test_create_existing_user(client, created_user):
     response = client.post(
@@ -67,3 +120,37 @@ def test_create_existing_user(client, created_user):
     assert response.status_code == 409
     assert response.json() == {"detail": "Item already exists"}
 
+def test_empty_field(client, created_user):
+    response = client.post(
+        "/users/",
+        json={"name": "sss", "id": "", "email": "", "password": ""}
+    )
+    assert response.status_code == 422
+
+def test_nonexisting_user(client, created_user):
+    response = client.get("/users/nonexistent")
+    assert response.status_code == 200
+
+def test_deleting_user(client):
+    name = "Jack"
+    response = client.post(
+        "/users/",
+        json={"name": name, "id": 100, "email": "jack@gmail.com", "password": "jackjack"}
+    )
+    assert response.status_code == 201
+    
+    response = client.post("/users/delete", json = {"name": name, "id": 100, "email": "jack@gmail.com", "password": "jackjack"})
+    assert response.status_code == 200
+    assert response.json() == {"message": f"User '{name}' deleted successfully."}
+
+def test_deleting_user_fail(client):
+    nameToDelete = "Jack"
+    response = client.post(
+        "/users/",
+        json={"name": "Sam", "id": 100, "email": "jack@gmail.com", "password": "jackjack"}
+    )
+    assert response.status_code == 201
+    
+    response = client.post("/users/delete", json = {"name": nameToDelete, "id": 100, "email": "jack@gmail.com", "password": "jackjack"})
+    assert response.status_code == 200
+    assert response.json() == {"message": f"User '{nameToDelete}' does not exist."}
