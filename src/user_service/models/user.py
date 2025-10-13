@@ -22,9 +22,13 @@ class UserRepository:
         self.session = session
 
     async def create(self, name: str) -> User:
-        result = self.session.execute(insert(User), [{"name": name}])
-        self.session.commit()
-        return User(name=name)
+        try:
+            result = self.session.execute(insert(User), [{"name": name}])
+            self.session.commit()
+            return User(name=name)
+        except Exception as e:
+            self.session.rollback()
+            raise e
 
     async def delete(self, name: str) -> None:
         user = await self.get_by_name(name)
