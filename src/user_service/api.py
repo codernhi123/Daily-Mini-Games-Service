@@ -1,6 +1,6 @@
 import os
 from typing import List
-from fastapi import FastAPI, Depends, Response
+from fastapi import FastAPI, Depends, Response, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from pydantic import TypeAdapter
@@ -17,13 +17,25 @@ load_dotenv()
 @app.post("/users/", status_code=201)
 async def create_user(user: UserSchema, response: Response, user_repo: UserRepository = Depends(get_user_repository)):
     try:
-        new_user = await user_repo.create(user.name)
+        new_user = await user_repo.create_with_id(user.name, user.id, user.email, user.password)
         return {"user": UserSchema.from_db_model(new_user)}
     except IntegrityError as e:
         response.status_code = 409
         return {"detail": "Item already exists"}
+    except AssertionError as e:
+        response.status_code = 422
+        return {"detail": "Empty fields not allowed"}
 
-@app.get("/users/")
+@app.post("/users/delete")
+async def delete_user(user: UserSchema, user_repo: UserRepository = Depends(get_user_repository)):
+    user_to_delete = await user_repo.get_by_name(user.name)
+    if not user_to_delete:
+        return {"message": f"User '{user.name}' does not exist."}
+
+    await user_repo.delete(user_to_delete.name)
+    return {"message": f"User '{user_to_delete.name}' deleted successfully."}
+
+@app.get("/all_users/")
 async def list_users(user_repo: UserRepository = Depends(get_user_repository)):
 
     user_models = await user_repo.get_all()

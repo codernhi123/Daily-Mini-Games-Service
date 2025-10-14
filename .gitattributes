@@ -1,0 +1,7 @@
+# Make all text files use LF line endings (fixes CRLF issues on Windows)
+* text=auto eol=lf
+
+# Common file types that must be LF
+*.py         text eol=lf
+*.sh         text eol=lf
+Dockerfile   text eol=lf
