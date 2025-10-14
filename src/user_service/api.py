@@ -23,6 +23,15 @@ async def create_user(user: UserSchema, response: Response, user_repo: UserRepos
         response.status_code = 422
         return {"detail": "Empty fields not allowed"}
 
+@app.post("/users/delete")
+async def delete_user(user: UserSchema, user_repo: UserRepository = Depends(get_user_repository)):
+    user_to_delete = await user_repo.get_by_name(user.name)
+    if not user_to_delete:
+        return {"message": f"User '{user.name}' does not exist."}
+
+    await user_repo.delete(user_to_delete.name)
+    return {"message": f"User '{user_to_delete.name}' deleted successfully."}
+
 @app.get("/all_users/")
 async def list_users(user_repo: UserRepository = Depends(get_user_repository)):
 
