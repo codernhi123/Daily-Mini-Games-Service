@@ -1,16 +1,18 @@
+import os
 from typing import List
 from fastapi import FastAPI, Depends, Response
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from pydantic import TypeAdapter
 import logging
-
-from admin.main import ui
+from nicegui import ui
+from admin import main
+from dotenv import load_dotenv
 from .models.user import UserRepository, UserSchema, get_user_repository
-
 
 logger = logging.getLogger('uvicorn.error')
 app = FastAPI()
+load_dotenv()
 
 @app.post("/users/", status_code=201)
 async def create_user(user: UserSchema, response: Response, user_repo: UserRepository = Depends(get_user_repository)):
@@ -35,8 +37,8 @@ async def get_user(name: str, user_repo: UserRepository = Depends(get_user_repos
     user = await user_repo.get_by_name(name)
     return {"user": user}
 
-
 ui.run_with(app,
             mount_path="/admin",
             favicon="👤",
-            title="User Admin")
+            title="User Admin",
+            storage_secret=os.getenv('STORAGE_SECRET'))
