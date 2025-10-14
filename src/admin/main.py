@@ -55,11 +55,15 @@ async def user_list(user_repo: UserRepository) -> None:
 @ui.page("/")
 async def index(user_repo: UserRepository = Depends(get_user_repository)):
     async def create() -> None:
-        await user_repo.create(name=name.value, email=email.value, password=password.value)
-        name.value = ""
-        email.value = ""
-        password.value = ""
-        user_list.refresh()
+        try:
+            await user_repo.create(name=name.value, email=email.value, password=password.value)
+        except:
+            pass
+        finally:
+            name.value = ""
+            email.value = ""
+            password.value = ""
+            user_list.refresh()
 
     with ui.column().classes('mx-auto'):
         # tailwind
