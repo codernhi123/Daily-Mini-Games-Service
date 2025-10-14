@@ -154,3 +154,5 @@ def test_deleting_user_fail(client):
     response = client.post("/users/delete", json = {"name": nameToDelete, "id": 100, "email": "jack@gmail.com", "password": "jackjack"})
     assert response.status_code == 200
     assert response.json() == {"message": f"User '{nameToDelete}' does not exist."}
+
+#testing the testing pipeline 
