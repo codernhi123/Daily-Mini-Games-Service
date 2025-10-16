@@ -32,7 +32,7 @@ jobs:
         run: docker compose exec web env
 
       - name: Linting with ruff
-        run: docker compose exec web ruff check . --exclude alembic,src/admin,src/shared,src/user_service
+        run: docker compose exec web ruff check .
       
       - name: Running pytests
         run: docker compose exec web pytest --maxfail=1
