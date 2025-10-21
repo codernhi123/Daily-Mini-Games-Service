@@ -120,6 +120,21 @@ def test_create_existing_user(client, created_user):
     assert response.status_code == 409
     assert response.json() == {"detail": "Item already exists"}
 
+def test_create_user_after_duplication(client, created_user):
+    response = client.post(
+        "/users/",
+        json=created_user,
+    )
+    assert response.status_code == 409
+    response = client.post(
+        "/users/",
+        json={"name": "bbb", "id": 100, "email": "bbb@gmail.com", "password": "bbb"}
+    )
+    assert response.status_code == 201
+    assert response.json() == {
+        "user": {"name": "bbb", "id": 100, "email": "bbb@gmail.com", "password": "bbb"}
+    }
+
 def test_empty_field(client, created_user):
     response = client.post(
         "/users/",
