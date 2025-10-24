@@ -1,8 +1,8 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session # noqa: F401
 
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
 engine = None
 def get_db():

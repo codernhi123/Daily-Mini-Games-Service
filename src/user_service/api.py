@@ -1,12 +1,12 @@
 import os
-from typing import List
-from fastapi import FastAPI, Depends, Response, HTTPException
-from sqlalchemy.orm import Session
+#from typing import List
+from fastapi import FastAPI, Depends, Response, HTTPException # noqa: F401
+from sqlalchemy.orm import Session # noqa: F401
 from sqlalchemy.exc import IntegrityError
-from pydantic import TypeAdapter
+# from pydantic import TypeAdapter
 import logging
 from nicegui import ui
-from admin import main
+from admin import main # noqa: F401
 from dotenv import load_dotenv
 from .models.user import UserRepository, UserSchema, get_user_repository
 
@@ -19,10 +19,10 @@ async def create_user(user: UserSchema, response: Response, user_repo: UserRepos
     try:
         new_user = await user_repo.create_with_id(user.name, user.id, user.email, user.password)
         return {"user": UserSchema.from_db_model(new_user)}
-    except IntegrityError as e:
+    except IntegrityError:
         response.status_code = 409
         return {"detail": "Item already exists"}
-    except AssertionError as e:
+    except AssertionError:
         response.status_code = 422
         return {"detail": "Empty fields not allowed"}
 

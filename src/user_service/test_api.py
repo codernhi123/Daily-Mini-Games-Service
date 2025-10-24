@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
 from sqlalchemy import create_engine, text
 
-from .models.user import Base, User, UserRepository, get_user_repository
+from .models.user import Base, UserRepository, get_user_repository
 
 from .api import app
 
@@ -84,7 +84,7 @@ def test_created_20000_users(client, created_20000_users):
     time_elapsed = end_time - start_time
     print(time_elapsed)
     assert response.status_code == 200
-    assert response.json() == {"user": {"name": f"user5000", "id": 5000, "email": "user5000@email.com", "password": "passord5000"}}
+    assert response.json() == {"user": {"name": "user5000", "id": 5000, "email": "user5000@email.com", "password": "passord5000"}}
     assert time_elapsed < 0.127
     
 def test_read_users(client, created_user, created_user2):
