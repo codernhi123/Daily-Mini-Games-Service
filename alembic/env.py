@@ -1,5 +1,6 @@
 from user_service.models.user import Base
 #from user_service.models import friend
+#ignore this comment
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
