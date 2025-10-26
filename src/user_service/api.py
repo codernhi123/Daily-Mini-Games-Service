@@ -59,8 +59,35 @@ async def get_user(name: str, user_repo: UserRepository = Depends(get_user_repos
         raise HTTPException(status_code=404, detail="User not found")
     return {"user": UserSchemaReturn.from_db_model(user)}
 
+@app.get("/users_by_id/{id}")
+async def get_user_by_id(id: int, user_repo: UserRepository = Depends(get_user_repository)):
+    user = await user_repo.get_by_id(id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"user": UserSchemaReturn.from_db_model(user)}
 
-
+@app.put("/users/{id}")
+async def update_user(id: int, updates: UserSchemaUpdate, user_repo: UserRepository = Depends(get_user_repository)):
+    
+    if not updates.password: 
+        raise HTTPException(status_code=401, detail="Password required for update")
+    
+    user = await user_repo.get_by_id(id)
+    if not user: 
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if not password_verification(updates.password, user.password):
+        raise HTTPException(status_code=401, detail="Invalid password for update")
+    
+    try:
+        if updates.new_password:
+            update_user = await user_repo.update_password(id, updates.new_password)
+            return {"user": UserSchemaReturn.from_db_model(update_user)}
+        
+        update_user = await user_repo.update_user(id, name=updates.name, email=updates.email)
+        return {"user": UserSchemaReturn.from_db_model(update_user)} 
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 ui.run_with(app,
             mount_path="/admin",
