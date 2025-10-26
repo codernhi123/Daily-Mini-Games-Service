@@ -1,8 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy import select, insert, delete, String, Integer, Sequence
 from sqlalchemy.orm import declarative_base, Session, mapped_column, Mapped
 from fastapi import Depends
-
+from passlib.context import CryptContext
+from typing import Optional
 from shared.database import get_db
 
 Base = declarative_base()
@@ -12,11 +13,20 @@ class User(Base):
     User model used by SQLAlchemy to interact with the database. When you look up a user in the database, you will get an instance of this class back. This is the database's view of users.
     """
     __tablename__ = "users"
-    name: Mapped[str] = mapped_column(String, primary_key=True)
-    id: Mapped[int] = mapped_column(Integer, unique=True)
+    name: Mapped[str] = mapped_column(String, unique=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-    password: Mapped[str] = mapped_column(String, nullable=False) #maybe hash later, here or in API
+    password: Mapped[str] = mapped_column(String(255), nullable=False) #maybe hash later, here or in API
 
+hashed_crypt = CryptContext(schemes=["bcrypt"], deprecated = "auto")
+
+def password_hash(password: str) -> str:
+    if password.startswith("$2b$"):
+        return password
+    return hashed_crypt.hash(password)
+
+def password_verification(regular_password: str, hashed_password: str) -> bool:
+    return hashed_crypt.verify(regular_password, hashed_password)
 class UserRepository:
     """
     Controls manipulation of the users table.
@@ -27,18 +37,20 @@ class UserRepository:
 
     async def create(self, name: str, email: str, password: str) -> User:
         try:
-            self.session.execute(insert(User), [{"name": name, "email": email, "password": password}])
+            secret_password = password_hash(password)
+            self.session.execute(insert(User), [{"name": name, "email": email, "password": secret_password}])
             self.session.commit()
-            return User(name=name, email=email, password=password)
+            return User(name=name, email=email, password=secret_password)
         except Exception as e:
             self.session.rollback()
             raise e
         
     async def create_with_id(self, name: str, id: id, email: str, password: str) -> User:
         try:
-            self.session.execute(insert(User), [{"name": name, "id": id, "email": email, "password": password}])
+            secret_password = password_hash(password)
+            self.session.execute(insert(User), [{"name": name, "id": id, "email": email, "password": secret_password}])
             self.session.commit()
-            return User(name=name, id=id, email=email, password=password)
+            return User(name=name, id=id, email=email, password=secret_password)
         except Exception as e:
             self.session.rollback()
             raise e
@@ -46,6 +58,13 @@ class UserRepository:
     async def delete(self, name: str) -> None:
         await self.get_by_name(name)
         stmt = delete(User).where(User.name == name)
+        result = self.session.execute(stmt)
+        self.session.commit()
+        return result
+    
+    async def delete_by_id(self, id: int) -> None:
+        await self.get_by_name(id)
+        stmt = delete(User).where(User.id == id)
         result = self.session.execute(stmt)
         self.session.commit()
         return result
@@ -61,24 +80,107 @@ class UserRepository:
         result = self.session.scalar(stmt)
         return result
     
-    async def get_by_id(self, id: int) -> User:
+    async def get_by_id(self, id: int) -> User | None:
         """Get user by id"""
-        user = next((u for u in await self.get_all() if u.id == id), None)
-        return user
+        stmt = select(User).where(User.id == id)
+        result = self.session.scalar(stmt)
+        return result
+    
+    async def get_by_email(self, email: str) -> User | None:
+        """Get user by id"""
+        stmt = select(User).where(User.email == email)
+        result = self.session.scalar(stmt)
+        return result
+
+    async def update_user(self, id: int, **kwargs) -> User:
+        try:
+            user = await self.get_by_id(id)
+            if not user:
+                raise ValueError("User not found")
+            
+            if 'name' in kwargs and kwargs['name'] is not None:
+                if kwargs['name'] != user.name:
+                    existing_name = await self.get_by_name(kwargs['name'])
+                    if existing_name:
+                        raise ValueError("Name already exists")
+                    user.name = kwargs['name']
+            if 'email' in kwargs and kwargs['email'] is not None:
+                if kwargs['email'] != user.email:
+                    existing_email = await self.get_by_email(kwargs['email'])
+                    if existing_email:
+                        raise ValueError("Email already exists")
+                    user.email = kwargs['email']
+            self.session.commit()
+            return user
+        except Exception as e:
+            self.session.rollback()
+            raise e
+        
+    async def update_password(self, id: int, password: str) -> User:
+        try:
+            user = await self.get_by_id(id)
+            if not user:
+                raise ValueError("User not found")
+
+            hashed_password = password_hash(password)
+            user.password = hashed_password
+            self.session.commit()
+            return user
+        except Exception as e:
+            self.session.rollback()
+            raise e
 
 def get_user_repository(db: Session = Depends(get_db)) -> UserRepository:
     return UserRepository(db)
 
-class UserSchema(BaseModel):
+class UserSchemaCreate(BaseModel):
     """
     The application's view of users. This is how the API represents users (as opposed to how the database represents them).
     """
     name: str
     id: int
     email: str
-    password: str #security risk, potentially seperate into two create vs read schema
+    password: str 
+
+    @field_validator('name', 'email', 'password')
+    @classmethod
+    def no_empty_strings(cls, v):
+        if v is not None:
+            stripped = v.strip()
+            if stripped == "":
+                raise ValueError("Fields cannot be empty or whitespace")
+            return stripped
+        return v
+
+class UserSchemaUpdate(BaseModel):
+    """
+    The application's view of users. This is how the API represents users (as opposed to how the database represents them).
+    """
+    name: Optional[str] = None 
+    email: Optional[str] = None 
+    password: Optional[str] = None 
+    new_password: Optional[str] = None 
+
+    @field_validator('name', 'email', 'password', 'new_password')
+    @classmethod
+    def no_empty_strings(cls, v):
+        if v is not None:
+            stripped = v.strip()
+            if stripped == "":
+                raise ValueError("Fields cannot be empty or whitespace")
+            return stripped
+        return v
+
+class UserSchemaReturn(BaseModel):
+    """
+    The application's view of users. This is how the API represents users (as opposed to how the database represents them).
+    """
+    name: str
+    id: int
+    email: str
 
     @classmethod
-    def from_db_model(cls, user: User) -> "UserSchema":
+    def from_db_model(cls, user: User) -> "UserSchemaReturn":
         """Create a UserSchema from a User"""
-        return cls(name=user.name, id=user.id, email=user.email, password=user.password)
+        return cls(name=user.name, id=user.id, email=user.email)
+    

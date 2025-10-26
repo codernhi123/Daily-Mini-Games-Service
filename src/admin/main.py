@@ -8,14 +8,14 @@ from fastapi import Depends
 from nicegui import ui, app
 #from pydantic import parse_obj_as
 
-from user_service.models.user import UserRepository, UserSchema, get_user_repository
+from user_service.models.user import UserRepository, UserSchemaReturn, get_user_repository
 
 logger = logging.getLogger('uvicorn.error')
 
 @ui.refreshable
 async def user_list(user_repo: UserRepository) -> None:
     user_models = await user_repo.get_all()
-    users = [UserSchema.from_db_model(model).model_dump() for model in user_models]
+    users = [UserSchemaReturn.from_db_model(model).model_dump() for model in user_models]
 
     ui.label("All Users")
 
@@ -46,7 +46,7 @@ async def user_list(user_repo: UserRepository) -> None:
     columns = [
         {'name': 'name', 'label': 'Name',  'field': 'name',  'required': True, 'align': 'left'},
         {'name': 'id',   'label': 'ID',    'field': 'id',    'required': True, 'align': 'left'},
-        {'name': 'email','label': 'Email', 'field': 'email',                       'align': 'left'},
+        {'name': 'email','label': 'Email', 'field': 'email', 'align': 'left'},
     ]
     table = ui.table(
         columns=columns,
