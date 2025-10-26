@@ -1,12 +1,12 @@
 import os
-from typing import List
-from fastapi import FastAPI, Depends, Response, HTTPException
-from sqlalchemy.orm import Session
+#from typing import List
+from fastapi import FastAPI, Depends, Response, HTTPException # noqa: F401
+from sqlalchemy.orm import Session # noqa: F401
 from sqlalchemy.exc import IntegrityError
-from pydantic import TypeAdapter
+# from pydantic import TypeAdapter
 import logging
 from nicegui import ui
-from admin import main
+from admin import main # noqa: F401
 from dotenv import load_dotenv
 from .models.user import UserRepository, UserSchemaCreate, UserSchemaReturn, UserSchemaUpdate, get_user_repository, password_hash, password_verification
 
@@ -19,10 +19,10 @@ async def create_user(user: UserSchemaCreate, response: Response, user_repo: Use
     try:
         new_user = await user_repo.create_with_id(user.name, user.id, user.email, user.password) #can use without id but then we got to change some tests, so leaving as is works for both functions and the local admin
         return {"user": UserSchemaReturn.from_db_model(new_user)}
-    except IntegrityError as e:
+    except IntegrityError:
         response.status_code = 409
         return {"detail": "Item already exists"}
-    except AssertionError as e:
+    except AssertionError:
         response.status_code = 422
         return {"detail": "Empty fields not allowed"}
 
