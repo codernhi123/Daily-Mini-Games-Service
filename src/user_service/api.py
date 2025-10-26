@@ -8,7 +8,7 @@ import logging
 from nicegui import ui
 from admin import main # noqa: F401
 from dotenv import load_dotenv
-from .models.user import UserRepository, UserSchemaCreate, UserSchemaReturn, UserSchemaUpdate, get_user_repository, password_hash, password_verification
+from .models.user import UserRepository, UserSchemaCreate, UserSchemaReturn, UserSchemaUpdate, get_user_repository, password_verification
 
 logger = logging.getLogger('uvicorn.error')
 app = FastAPI()

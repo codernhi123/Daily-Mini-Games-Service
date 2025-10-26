@@ -1,12 +1,12 @@
 import pytest
-import time
+#import time
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
 from sqlalchemy import create_engine, text
 
-from .models.user import Base, User, UserRepository, get_user_repository, password_hash, password_verification
+from .models.user import Base, UserRepository, get_user_repository, password_hash, password_verification
 
 from .api import app
 
@@ -56,7 +56,7 @@ def created_user(session):
 @pytest.fixture(scope='function')
 def created_user2(session):
     hashed_password = password_hash("fooby")
-    user_data2 = {"name": "foob", "id": 2, "email": "foob@gmail.com", "password": "fooby"}
+    user_data2 = {"name": "foob", "id": 2, "email": "foob@gmail.com", "password": hashed_password}
     try:
         session.execute(text("INSERT INTO users (name, id, email, password) VALUES (:name, :id, :email, :password)"), user_data2)
         session.commit()

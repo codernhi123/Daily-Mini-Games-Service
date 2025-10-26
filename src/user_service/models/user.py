@@ -1,5 +1,5 @@
 from pydantic import BaseModel, field_validator
-from sqlalchemy import select, insert, delete, update, String, Integer, Sequence
+from sqlalchemy import select, insert, delete, String, Integer, Sequence
 from sqlalchemy.orm import declarative_base, Session, mapped_column, Mapped
 from fastapi import Depends
 from passlib.context import CryptContext
@@ -38,7 +38,7 @@ class UserRepository:
     async def create(self, name: str, email: str, password: str) -> User:
         try:
             secret_password = password_hash(password)
-            result = self.session.execute(insert(User), [{"name": name, "email": email, "password": secret_password}])
+            self.session.execute(insert(User), [{"name": name, "email": email, "password": secret_password}])
             self.session.commit()
             return User(name=name, email=email, password=secret_password)
         except Exception as e:
@@ -48,7 +48,7 @@ class UserRepository:
     async def create_with_id(self, name: str, id: id, email: str, password: str) -> User:
         try:
             secret_password = password_hash(password)
-            result = self.session.execute(insert(User), [{"name": name, "id": id, "email": email, "password": secret_password}])
+            self.session.execute(insert(User), [{"name": name, "id": id, "email": email, "password": secret_password}])
             self.session.commit()
             return User(name=name, id=id, email=email, password=secret_password)
         except Exception as e:
