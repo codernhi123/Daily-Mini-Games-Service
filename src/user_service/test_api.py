@@ -252,7 +252,6 @@ def test_deleting_nonexixting_user(client):
 
 #testing the testing pipeline 
 
-# In test_api.py
 def test_password_hashing():
     regular_password = "mysecretpassword"
     hashed_password = password_hash(regular_password)

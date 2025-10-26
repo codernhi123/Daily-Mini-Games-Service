@@ -9,7 +9,6 @@ from nicegui import ui
 from admin import main
 from dotenv import load_dotenv
 from .models.user import UserRepository, UserSchemaCreate, UserSchemaReturn, UserSchemaUpdate, get_user_repository, password_hash, password_verification
-# from .models.user import UserRepository, UserSchema, get_user_repository, password_hash, password_verification
 
 logger = logging.getLogger('uvicorn.error')
 app = FastAPI()

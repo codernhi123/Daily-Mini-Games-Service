@@ -35,15 +35,6 @@ class UserRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    # async def create(self, name: str, email: str, password: str) -> User:
-    #     try:
-    #         self.session.execute(insert(User), [{"name": name, "email": email, "password": password}])
-    #         self.session.commit()
-    #         return User(name=name, email=email, password=password)
-    #     except Exception as e:
-    #         self.session.rollback()
-    #         raise e
-        
     async def create(self, name: str, email: str, password: str) -> User:
         try:
             secret_password = password_hash(password)
@@ -53,16 +44,6 @@ class UserRepository:
         except Exception as e:
             self.session.rollback()
             raise e
-        
-
-    # async def create_with_id(self, name: str, id: id, email: str, password: str) -> User:
-    #     try:
-    #         self.session.execute(insert(User), [{"name": name, "id": id, "email": email, "password": password}])
-    #         self.session.commit()
-    #         return User(name=name, id=id, email=email, password=password)
-    #     except Exception as e:
-    #         self.session.rollback()
-    #         raise e
         
     async def create_with_id(self, name: str, id: id, email: str, password: str) -> User:
         try:
@@ -110,29 +91,6 @@ class UserRepository:
         stmt = select(User).where(User.email == email)
         result = self.session.scalar(stmt)
         return result
-    
-    # async def update_user(self, name: str, id: int, email: str) -> User:
-    #     try:
-    #         user = await self.get_by_id(id)
-    #         if not user:
-    #             raise ValueError("User not found")
-            
-    #         dublicate_name = await self.get_by_name(name)
-    #         if dublicate_name:
-    #             raise ValueError("Name already exists")
-    #         else: 
-    #             user.name = name
-            
-    #         dublicate_email = await self.get_by_email(email)
-    #         if dublicate_email:
-    #             raise ValueError("Email already exists")
-    #         else: 
-    #             user.email = email
-    #         self.session.commit()
-    #         return User
-    #     except Exception as e:
-    #         self.session.rollback()
-    #         raise e
 
     async def update_user(self, id: int, **kwargs) -> User:
         try:
@@ -182,7 +140,7 @@ class UserSchemaCreate(BaseModel):
     name: str
     id: int
     email: str
-    password: str #security risk, potentially seperate into two create vs read schema
+    password: str 
 
     @field_validator('name', 'email', 'password')
     @classmethod
@@ -200,7 +158,7 @@ class UserSchemaUpdate(BaseModel):
     """
     name: Optional[str] = None 
     email: Optional[str] = None 
-    password: Optional[str] = None  #security risk, potentially seperate into two create vs read schema
+    password: Optional[str] = None 
     new_password: Optional[str] = None 
 
     @field_validator('name', 'email', 'password', 'new_password')
@@ -219,26 +177,10 @@ class UserSchemaReturn(BaseModel):
     """
     name: str
     id: int
-    email: str #security risk, potentially seperate into two create vs read schema
+    email: str
 
     @classmethod
     def from_db_model(cls, user: User) -> "UserSchemaReturn":
         """Create a UserSchema from a User"""
         return cls(name=user.name, id=user.id, email=user.email)
     
-# class UserSchemaDelete(BaseModel):
-#     """
-#     The application's view of users. This is how the API represents users (as opposed to how the database represents them).
-#     """
-#     id: int
-#     password: str #security risk, potentially seperate into two create vs read schema
-
-#     @field_validator('password')
-#     @classmethod
-#     def no_empty_strings(cls, v):
-#         if v is not None:
-#             stripped = v.strip()
-#             if stripped == "":
-#                 raise ValueError("Fields cannot be empty or whitespace")
-#             return stripped
-#         return v
