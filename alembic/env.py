@@ -1,5 +1,5 @@
 from user_service.models.user import Base
-#from user_service.models import friend
+from user_service.models import friend
 #ignore this comment
 from logging.config import fileConfig
 
