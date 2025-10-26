@@ -36,6 +36,18 @@ class FriendRepository:
     def _ordered(self, u1: str, u2: str) -> tuple[str, str]:
         return (u1, u2) if u1 < u2 else (u2, u1)
     
+    async def view_request_incoming(self, user_name: str):
+        stmt = select(FriendRequest).where(
+            and_(FriendRequest.receiver == user_name, FriendRequest.status == "pending")
+        )
+        return self.session.scalars(stmt).all()
+    
+    async def view_request_outgoing(self, user_name: str):
+        stmt = select(FriendRequest).where(
+            and_(FriendRequest.requester == user_name, FriendRequest.status == "pending")
+        )
+        return self.session.scalars(stmt).all()
+    
     async def send_request(self, requester:str, receiver:str):
         try:
             if receiver == requester:
