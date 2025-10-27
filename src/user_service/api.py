@@ -15,7 +15,7 @@ logger = logging.getLogger('uvicorn.error')
 app = FastAPI()
 load_dotenv()
 
-@app.post("/users/", status_code=201, dependencies=[Depends(check_rate_limiter)])
+@app.post("/v2/users/", status_code=201, dependencies=[Depends(check_rate_limiter)])
 async def create_user(user: UserSchemaCreate, response: Response, user_repo: UserRepository = Depends(get_user_repository)):
     try:
         new_user = await user_repo.create_with_id(user.name, user.id, user.email, user.password, user.tier) #can use without id but then we got to change some tests, so leaving as is works for both functions and the local admin
@@ -27,7 +27,7 @@ async def create_user(user: UserSchemaCreate, response: Response, user_repo: Use
         response.status_code = 422
         return {"detail": "Empty fields not allowed"}
 
-@app.post("/users/{id}", dependencies=[Depends(check_rate_limiter)])
+@app.post("/v2/users/{id}", dependencies=[Depends(check_rate_limiter)])
 async def delete_user(id: int, delete: UserSchemaUpdate, user_repo: UserRepository = Depends(get_user_repository)):
     
     if not delete.password: 
@@ -43,7 +43,7 @@ async def delete_user(id: int, delete: UserSchemaUpdate, user_repo: UserReposito
     await user_repo.delete_by_id(user.id)
     return {"message": f"User '{user.id}' deleted successfully."}
 
-@app.get("/all_users/", dependencies=[Depends(check_rate_limiter)])
+@app.get("/v2/all_users/", dependencies=[Depends(check_rate_limiter)])
 async def list_users(user_repo: UserRepository = Depends(get_user_repository)):
 
     user_models = await user_repo.get_all()
@@ -52,21 +52,21 @@ async def list_users(user_repo: UserRepository = Depends(get_user_repository)):
         users.append(UserSchemaReturn.from_db_model(model))
     return {'users': users}
 
-@app.get("/users/{name}", dependencies=[Depends(check_rate_limiter)])
+@app.get("/v2/users/{name}", dependencies=[Depends(check_rate_limiter)])
 async def get_user(name: str, user_repo: UserRepository = Depends(get_user_repository)):
     user = await user_repo.get_by_name(name)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return {"user": UserSchemaReturn.from_db_model(user)}
 
-@app.get("/users_by_id/{id}", dependencies=[Depends(check_rate_limiter)])
+@app.get("/v2/users_by_id/{id}", dependencies=[Depends(check_rate_limiter)])
 async def get_user_by_id(id: int, user_repo: UserRepository = Depends(get_user_repository)):
     user = await user_repo.get_by_id(id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return {"user": UserSchemaReturn.from_db_model(user)}
 
-@app.put("/users/{id}", dependencies=[Depends(check_rate_limiter)])
+@app.put("/v2/users/{id}", dependencies=[Depends(check_rate_limiter)])
 async def update_user(id: int, updates: UserSchemaUpdate, user_repo: UserRepository = Depends(get_user_repository)):
     
     if not updates.password: 

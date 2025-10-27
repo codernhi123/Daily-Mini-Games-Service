@@ -85,14 +85,14 @@ def test_rate_limiter_different_users_unauthenticated():
 
 @pytest.mark.skip(reason="Slower Test")
 def test_rate_limit_for_endpoint_unauthenticated(client):
-    response = client.get("/all_users/")
+    response = client.get("/v2/all_users/")
     assert response.status_code == 200
 
-    response = client.get("/all_users/")
+    response = client.get("/v2/all_users/")
     assert response.status_code == 429
 
     time.sleep(10.1)
-    response = client.get("/all_users/")
+    response = client.get("/v2/all_users/")
     assert response.status_code == 200
 
 @pytest.mark.skip(reason="Needs JWT")
@@ -101,12 +101,12 @@ def test_rate_limit_for_endpoint_authenticated(client_no_rate_limiting):
 
 def test_rate_limiter_allows_requests(client_no_rate_limiting):
     with patch("user_service.models.rate_limiter.rate_limiter.check_unauthenticated_limit", return_value=True):
-        response = client_no_rate_limiting.get("/all_users/")
+        response = client_no_rate_limiting.get("/v2/all_users/")
         assert response.status_code == 200
 
 def test_rate_limiter_deny_requests(client):
     with patch("user_service.models.rate_limiter.rate_limiter.check_unauthenticated_limit", return_value=False):
-        response = client.get("/all_users/")
+        response = client.get("/v2/all_users/")
         assert response.status_code == 429
 
 @pytest.mark.skip(reason="Slower Test")
