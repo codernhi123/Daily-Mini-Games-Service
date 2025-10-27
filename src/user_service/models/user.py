@@ -16,7 +16,8 @@ class User(Base):
     name: Mapped[str] = mapped_column(String, unique=True)
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-    password: Mapped[str] = mapped_column(String(255), nullable=False) #maybe hash later, here or in API
+    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    tier: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
 hashed_crypt = CryptContext(schemes=["bcrypt"], deprecated = "auto")
 
@@ -35,22 +36,22 @@ class UserRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    async def create(self, name: str, email: str, password: str) -> User:
+    async def create(self, name: str, email: str, password: str, tier: int) -> User:
         try:
             secret_password = password_hash(password)
-            self.session.execute(insert(User), [{"name": name, "email": email, "password": secret_password}])
+            self.session.execute(insert(User), [{"name": name, "email": email, "password": secret_password, "tier": tier}])
             self.session.commit()
-            return User(name=name, email=email, password=secret_password)
+            return User(name=name, email=email, password=secret_password, tier=tier)
         except Exception as e:
             self.session.rollback()
             raise e
         
-    async def create_with_id(self, name: str, id: id, email: str, password: str) -> User:
+    async def create_with_id(self, name: str, id: id, email: str, password: str, tier: int) -> User:
         try:
             secret_password = password_hash(password)
-            self.session.execute(insert(User), [{"name": name, "id": id, "email": email, "password": secret_password}])
+            self.session.execute(insert(User), [{"name": name, "id": id, "email": email, "password": secret_password, "tier": tier}])
             self.session.commit()
-            return User(name=name, id=id, email=email, password=secret_password)
+            return User(name=name, id=id, email=email, password=secret_password, tier=tier)
         except Exception as e:
             self.session.rollback()
             raise e
@@ -110,6 +111,8 @@ class UserRepository:
                     if existing_email:
                         raise ValueError("Email already exists")
                     user.email = kwargs['email']
+            if 'tier' in kwargs and kwargs['tier'] is not None:
+                user.tier = kwargs['tier']
             self.session.commit()
             return user
         except Exception as e:
@@ -141,6 +144,7 @@ class UserSchemaCreate(BaseModel):
     id: int
     email: str
     password: str 
+    tier: int=1
 
     @field_validator('name', 'email', 'password')
     @classmethod
@@ -151,6 +155,13 @@ class UserSchemaCreate(BaseModel):
                 raise ValueError("Fields cannot be empty or whitespace")
             return stripped
         return v
+    
+    @field_validator('tier')
+    @classmethod
+    def valid_tier(cls, v):
+        if v < 1:
+            raise ValueError("Tier must be at least 1")
+        return v
 
 class UserSchemaUpdate(BaseModel):
     """
@@ -160,6 +171,7 @@ class UserSchemaUpdate(BaseModel):
     email: Optional[str] = None 
     password: Optional[str] = None 
     new_password: Optional[str] = None 
+    tier: Optional[int] = None 
 
     @field_validator('name', 'email', 'password', 'new_password')
     @classmethod
@@ -170,6 +182,13 @@ class UserSchemaUpdate(BaseModel):
                 raise ValueError("Fields cannot be empty or whitespace")
             return stripped
         return v
+    
+    @field_validator('tier')
+    @classmethod
+    def valid_tier(cls, v):
+        if v is not None and v < 1:
+            raise ValueError("Tier must be at least 1")
+        return v
 
 class UserSchemaReturn(BaseModel):
     """
@@ -178,9 +197,10 @@ class UserSchemaReturn(BaseModel):
     name: str
     id: int
     email: str
+    tier: int
 
     @classmethod
     def from_db_model(cls, user: User) -> "UserSchemaReturn":
         """Create a UserSchema from a User"""
-        return cls(name=user.name, id=user.id, email=user.email)
+        return cls(name=user.name, id=user.id, email=user.email, tier=user.tier)
     

@@ -47,6 +47,7 @@ async def user_list(user_repo: UserRepository) -> None:
         {'name': 'name', 'label': 'Name',  'field': 'name',  'required': True, 'align': 'left'},
         {'name': 'id',   'label': 'ID',    'field': 'id',    'required': True, 'align': 'left'},
         {'name': 'email','label': 'Email', 'field': 'email', 'align': 'left'},
+        {'name': 'tier','label': 'Tier', 'field': 'tier', 'align': 'left'},
     ]
     table = ui.table(
         columns=columns,
@@ -92,19 +93,21 @@ async def index(user_repo: UserRepository = Depends(get_user_repository)):
     with main_content:
         async def create() -> None:
             try:
-                await user_repo.create(name=name.value, email=email.value, password=password.value)
+                await user_repo.create(name=name.value, email=email.value, password=password.value, tier=int(tier.value))
             except Exception:
                 pass
             finally:
                 name.value = ""
                 email.value = ""
                 password.value = ""
+                tier.value = 1
                 user_list.refresh()
 
         with ui.row().classes('w-full items-center px-4'):
             name = ui.input(label='Name') 
             email = ui.input(label='Email')
             password = ui.input(label='Password')
+            tier = ui.number(label='Tier', value=1, min=1)
             ui.button(icon='add').on('click', create)
 
         await user_list(user_repo)
