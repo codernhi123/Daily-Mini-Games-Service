@@ -17,6 +17,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String(255), nullable=False) #maybe hash later, here or in API
+    #active_jwt: Mapped[str | None] = mapped_column(String, nullable=True)
 
 hashed_crypt = CryptContext(schemes=["bcrypt"], deprecated = "auto")
 
@@ -184,3 +185,14 @@ class UserSchemaReturn(BaseModel):
         """Create a UserSchema from a User"""
         return cls(name=user.name, id=user.id, email=user.email)
     
+class AuthRequest(BaseModel):
+    name: str
+    password: str
+    #MUST BE GIVEN IN UTC IN 'YYYY-MM-DD HH:MM:SS' FORMAT
+    expiry: str
+
+class AuthResponse(BaseModel):
+    jwt: str
+
+class DeauthRequest(BaseModel):
+    jwt: str
