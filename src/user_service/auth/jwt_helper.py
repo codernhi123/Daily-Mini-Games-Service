@@ -1,6 +1,5 @@
-import os
 from datetime import datetime, timedelta, timezone
-from authlib.jose import jwt
+from authlib.jose import jwt, JoseError
 
 DEFAULT_ACCESS_TOKEN_EXPIRE_MINUTES = 60 
 with open('./keys/private.pem', "rb") as f:
@@ -28,3 +27,11 @@ def create_access_token(user_id: int, expiry: datetime) -> str:
     s = jwt.encode(header, payload, PRIVATE_KEY)
     
     return s
+
+def validate_jwt(token: str):
+    try:
+        payload = jwt.decode(token, PUBLIC_KEY)
+        payload.validate()
+        return payload
+    except JoseError:
+        raise ValueError("Invalid or expired JWT")

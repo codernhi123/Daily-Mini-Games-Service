@@ -9,9 +9,8 @@ import logging
 from nicegui import ui
 from admin import main # noqa: F401
 from dotenv import load_dotenv
-from user_service.auth.jwt_helper import create_access_token
-from .models.user import AuthRequest, AuthResponse, DeauthRequest, UserRepository, UserSchemaCreate, UserSchemaReturn, UserSchemaUpdate, get_user_repository, password_verification
-from .models.user import UserRepository, UserSchemaCreate, UserSchemaReturn, UserSchemaUpdate, get_user_repository, password_verification
+from user_service.auth.jwt_helper import create_access_token, validate_jwt
+from .models.user import UserRepository, AuthRequest, AuthResponse, DeauthRequest, UserSchemaCreate, UserSchemaReturn, UserSchemaUpdate, get_user_repository, password_verification
 from .models.rate_limiter import check_rate_limiter
 
 logger = logging.getLogger('uvicorn.error')
@@ -47,7 +46,7 @@ async def delete_user(id: int, delete: UserSchemaUpdate, user_repo: UserReposito
     return {"message": f"User '{user.id}' deleted successfully."}
 
 @app.post("/v2/authentications")
-async def become_authenticated(auth_request: AuthRequest, user_repo: UserRepository = Depends(get_user_repository),):
+async def become_authenticated(auth_request: AuthRequest, user_repo: UserRepository = Depends(get_user_repository)):
     user = await user_repo.get_by_name(auth_request.name)
 
     if not user:
@@ -71,20 +70,23 @@ async def become_authenticated(auth_request: AuthRequest, user_repo: UserReposit
 
     access_token = create_access_token(user.id, expiry_dt)
 
+    await user_repo.update_active_jwt(user.id, access_token)
+
     return AuthResponse(
         jwt=access_token
     )
 
-# @app.delete("/v2/authentications")
-# async def delete_authentication(jwt_request: DeauthRequest):
-#     try:
-#         payload = validate_jwt(jwt_request.jwt)
-#     except InvalidTokenError:
-#         raise HTTPException(status_code=401, detail="Invalid JWT")
+@app.delete("/v2/authentications")
+async def delete_authentication(jwt_request: DeauthRequest, user_repo: UserRepository = Depends(get_user_repository)):
+    try:
+        payload = validate_jwt(jwt_request.jwt)
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid or expired JWT")
 
-#     revoke_jwt(jwt_request.jwt)
+    user_id = int(payload.get("sub"))
+    await user_repo.update_active_jwt(user_id, None)
 
-#     return {"detail": "JWT successfully revoked"}
+    return {"detail": "JWT successfully revoked"}
 
 @app.get("/all_users/", dependencies=[Depends(check_rate_limiter)])
 async def list_users(user_repo: UserRepository = Depends(get_user_repository)):
@@ -112,15 +114,22 @@ async def get_user_by_id(id: int, user_repo: UserRepository = Depends(get_user_r
 @app.put("/users/{id}", dependencies=[Depends(check_rate_limiter)])
 async def update_user(id: int, updates: UserSchemaUpdate, user_repo: UserRepository = Depends(get_user_repository)):
     
-    if not updates.password: 
-        raise HTTPException(status_code=401, detail="Password required for update")
-    
     user = await user_repo.get_by_id(id)
     if not user: 
         raise HTTPException(status_code=404, detail="User not found")
     
-    if not password_verification(updates.password, user.password):
-        raise HTTPException(status_code=401, detail="Invalid password for update")
+    if updates.password:
+        if not password_verification(updates.password, user.password):
+            raise HTTPException(status_code=401, detail="Invalid password for update") 
+    elif updates.active_jwt:
+        try:
+            payload = validate_jwt(updates.active_jwt)
+            if int(payload.get("sub")) != id:
+                raise HTTPException(status_code=401, detail="JWT does not match user")
+        except ValueError:
+            raise HTTPException(status_code=401, detail="Invalid or expired JWT")
+    else:
+        raise HTTPException(status_code=401, detail="Password or JWT required")
     
     try:
         if updates.new_password:

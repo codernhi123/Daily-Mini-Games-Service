@@ -17,9 +17,8 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String(255), nullable=False) #maybe hash later, here or in API
-    #active_jwt: Mapped[str | None] = mapped_column(String, nullable=True)
-    password: Mapped[str] = mapped_column(String(255), nullable=False)
     tier: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    active_jwt: Mapped[str | None] = mapped_column(String, nullable=True)
 
 hashed_crypt = CryptContext(schemes=["bcrypt"], deprecated = "auto")
 
@@ -134,6 +133,19 @@ class UserRepository:
         except Exception as e:
             self.session.rollback()
             raise e
+        
+    async def update_active_jwt(self, id: int, jwt_token: str | None) -> User:
+        try:
+            user = await self.get_by_id(id)
+            if not user:
+                raise ValueError("User not found")
+
+            user.active_jwt = jwt_token
+            self.session.commit()
+            return user
+        except Exception as e:
+            self.session.rollback()
+            raise e
 
 def get_user_repository(db: Session = Depends(get_db)) -> UserRepository:
     return UserRepository(db)
@@ -173,7 +185,8 @@ class UserSchemaUpdate(BaseModel):
     email: Optional[str] = None 
     password: Optional[str] = None 
     new_password: Optional[str] = None 
-    tier: Optional[int] = None 
+    tier: Optional[int] = None
+    active_jwt: Optional[str] = None  
 
     @field_validator('name', 'email', 'password', 'new_password')
     @classmethod

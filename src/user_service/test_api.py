@@ -370,10 +370,10 @@ def test_wrong_user_password(client, created_user):
     assert response.status_code == 401
     assert response.json() == {"detail": "Invalid password for update"}
 
-def test_no_user_password(client, created_user):
+def test_no_user_password_no_JWT(client, created_user):
     response = client.put("/users/1", json={"name": "newfoo", "email": "newfoo@gmail.com"})
     assert response.status_code == 401
-    assert response.json() == {"detail": "Password required for update"}
+    assert response.json() == {"detail": "Password or JWT required"}
 
 def test_updating_nonexisting_user(client, created_user):
     response = client.put("/users/3", json={"name": "newfoo", "email": "newfoo@gmail.com", "password": "fooy"})
