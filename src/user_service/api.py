@@ -1,6 +1,5 @@
-from datetime import datetime, timezone
 import os
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from fastapi import Query
 from .models.event import (
     EventSchemaCreate, EventSchemaReturn, EventQuery,

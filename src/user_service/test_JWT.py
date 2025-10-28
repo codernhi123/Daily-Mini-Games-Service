@@ -4,12 +4,11 @@ import pytest
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
 from sqlalchemy import create_engine, text
 from user_service.auth.jwt_helper import create_access_token, validate_jwt
 from .models.rate_limiter import check_rate_limiter
 
-from .models.user import Base, UserRepository, get_user_repository, password_hash, password_verification
+from .models.user import Base, UserRepository, get_user_repository, password_verification
 
 from .api import app
 
@@ -240,9 +239,6 @@ def test_update_user_JWT_token_update_everything(client,session):
     data = response2.json()
     token = data["jwt"]
 
-    expired_fifty_token = datetime.now(timezone.utc) - timedelta(minutes=50)
-    expired = create_access_token(3, expired_fifty_token)
-
     response3 = client.put("/v2/users/3", json={"name": "newfoo", "email": "newfoo@gmail.com", "new_password": "newfooy", "tier": 2, "active_jwt": token})
     assert response3.status_code == 200 
     assert response3.json() == {
@@ -284,7 +280,7 @@ def test_update_user_JWT_token_expired_token(client,session):
     assert response3.status_code == 401 
     assert response3.json() == {"detail": "Invalid or expired JWT"}
 
-def test_update_user_JWT_token_expired_token(client,session):
+def test_update_user_JWT_token_wrong_id_token(client,session):
     response = client.post(
         "/v2/users/",
         json={"name": "bbb", "id": 3, "email": "bbb@gmail.com", "password": "bbb", "tier": 3}
