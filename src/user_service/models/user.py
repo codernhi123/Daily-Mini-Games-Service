@@ -17,6 +17,8 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String(255), nullable=False) #maybe hash later, here or in API
+    tier: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    active_jwt: Mapped[str | None] = mapped_column(String, nullable=True)
 
 hashed_crypt = CryptContext(schemes=["bcrypt"], deprecated = "auto")
 
@@ -35,22 +37,22 @@ class UserRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    async def create(self, name: str, email: str, password: str) -> User:
+    async def create(self, name: str, email: str, password: str, tier: int) -> User:
         try:
             secret_password = password_hash(password)
-            self.session.execute(insert(User), [{"name": name, "email": email, "password": secret_password}])
+            self.session.execute(insert(User), [{"name": name, "email": email, "password": secret_password, "tier": tier}])
             self.session.commit()
-            return User(name=name, email=email, password=secret_password)
+            return User(name=name, email=email, password=secret_password, tier=tier)
         except Exception as e:
             self.session.rollback()
             raise e
         
-    async def create_with_id(self, name: str, id: id, email: str, password: str) -> User:
+    async def create_with_id(self, name: str, id: id, email: str, password: str, tier: int) -> User:
         try:
             secret_password = password_hash(password)
-            self.session.execute(insert(User), [{"name": name, "id": id, "email": email, "password": secret_password}])
+            self.session.execute(insert(User), [{"name": name, "id": id, "email": email, "password": secret_password, "tier": tier}])
             self.session.commit()
-            return User(name=name, id=id, email=email, password=secret_password)
+            return User(name=name, id=id, email=email, password=secret_password, tier=tier)
         except Exception as e:
             self.session.rollback()
             raise e
@@ -110,6 +112,8 @@ class UserRepository:
                     if existing_email:
                         raise ValueError("Email already exists")
                     user.email = kwargs['email']
+            if 'tier' in kwargs and kwargs['tier'] is not None:
+                user.tier = kwargs['tier']
             self.session.commit()
             return user
         except Exception as e:
@@ -129,6 +133,19 @@ class UserRepository:
         except Exception as e:
             self.session.rollback()
             raise e
+        
+    async def update_active_jwt(self, id: int, jwt_token: str | None) -> User:
+        try:
+            user = await self.get_by_id(id)
+            if not user:
+                raise ValueError("User not found")
+
+            user.active_jwt = jwt_token
+            self.session.commit()
+            return user
+        except Exception as e:
+            self.session.rollback()
+            raise e
 
 def get_user_repository(db: Session = Depends(get_db)) -> UserRepository:
     return UserRepository(db)
@@ -141,6 +158,7 @@ class UserSchemaCreate(BaseModel):
     id: int
     email: str
     password: str 
+    tier: int=1
 
     @field_validator('name', 'email', 'password')
     @classmethod
@@ -151,6 +169,13 @@ class UserSchemaCreate(BaseModel):
                 raise ValueError("Fields cannot be empty or whitespace")
             return stripped
         return v
+    
+    @field_validator('tier')
+    @classmethod
+    def valid_tier(cls, v):
+        if v < 1:
+            raise ValueError("Tier must be at least 1")
+        return v
 
 class UserSchemaUpdate(BaseModel):
     """
@@ -160,6 +185,8 @@ class UserSchemaUpdate(BaseModel):
     email: Optional[str] = None 
     password: Optional[str] = None 
     new_password: Optional[str] = None 
+    tier: Optional[int] = None
+    active_jwt: Optional[str] = None  
 
     @field_validator('name', 'email', 'password', 'new_password')
     @classmethod
@@ -170,6 +197,13 @@ class UserSchemaUpdate(BaseModel):
                 raise ValueError("Fields cannot be empty or whitespace")
             return stripped
         return v
+    
+    @field_validator('tier')
+    @classmethod
+    def valid_tier(cls, v):
+        if v is not None and v < 1:
+            raise ValueError("Tier must be at least 1")
+        return v
 
 class UserSchemaReturn(BaseModel):
     """
@@ -178,9 +212,23 @@ class UserSchemaReturn(BaseModel):
     name: str
     id: int
     email: str
+    tier: int
 
     @classmethod
     def from_db_model(cls, user: User) -> "UserSchemaReturn":
         """Create a UserSchema from a User"""
-        return cls(name=user.name, id=user.id, email=user.email)
+        return cls(name=user.name, id=user.id, email=user.email, tier=user.tier)
+    
+class AuthRequest(BaseModel):
+    name: str
+    password: str
+    #MUST BE GIVEN IN UTC IN 'YYYY-MM-DD HH:MM:SS' FORMAT
+    expiry: str
+
+class AuthResponse(BaseModel):
+    jwt: str
+
+class DeauthRequest(BaseModel):
+    jwt: str
+        
     
