@@ -1,7 +1,7 @@
 """add jwt column
 
 Revision ID: e9cf9d999836
-Revises: c7e4a9f2b18d
+Revises: 81f34854c5bf
 Create Date: 2025-10-27 03:14:27.922233
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'e9cf9d999836'
-down_revision: Union[str, Sequence[str], None] = 'c7e4a9f2b18d'
+down_revision: Union[str, Sequence[str], None] = '81f34854c5bf'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

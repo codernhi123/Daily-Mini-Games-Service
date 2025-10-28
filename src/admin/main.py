@@ -7,10 +7,28 @@ import logging
 from fastapi import Depends
 from nicegui import ui, app
 #from pydantic import parse_obj_as
+from pydantic import BaseModel, EmailStr, ValidationError, Field, field_validator
 
 from user_service.models.user import UserRepository, UserSchemaReturn, get_user_repository
 
 logger = logging.getLogger('uvicorn.error')
+
+
+class _AdminCreate(BaseModel):
+    name: str = Field(min_length=1)
+    email: EmailStr
+    password: str = Field(min_length=1)
+    tier: int = Field(ge=1)
+
+    @field_validator('name', 'password', mode='before')
+    @classmethod
+    def _strip_and_require(cls, v):
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                raise ValueError('must not be empty or whitespace')
+        return v
+
 
 @ui.refreshable
 async def user_list(user_repo: UserRepository) -> None:
@@ -92,10 +110,29 @@ async def index(user_repo: UserRepository = Depends(get_user_repository)):
 
     with main_content:
         async def create() -> None:
+            # input validation (minimal safe addition)
             try:
-                await user_repo.create(name=name.value, email=email.value, password=password.value, tier=int(tier.value))
-            except Exception:
-                pass
+                payload = _AdminCreate(
+                    name=name.value,
+                    email=email.value,
+                    password=password.value,
+                    tier=int(tier.value or 1),
+                )
+            except ValidationError as ve:
+                ui.notify(f"Invalid input: {ve.errors()[0]['msg']}", color='negative')
+                return
+
+            try:
+                await user_repo.create(
+                    name=payload.name,
+                    email=payload.email,
+                    password=payload.password,
+                    tier=payload.tier,
+                )
+                ui.notify("User created", color='positive')
+            except Exception as e:
+                ui.notify(f"Create failed: {e}", color='negative')
+                return
             finally:
                 name.value = ""
                 email.value = ""
