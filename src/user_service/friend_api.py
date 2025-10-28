@@ -8,36 +8,121 @@ from .models.friend import FriendRepository, FriendRequest, Friendship, get_frie
 from .models.user import User
 from shared.database import get_db
 
-router = APIRouter(prefix="/v2/users/", tags=["friends"])
+router = APIRouter(prefix="/v2/users", tags=["friends"])
 
 class SendRequestBody(BaseModel):
-    other: str # receiver
+    other: int
 
-@router.get("/{user_name}/friend-requests/")
+@router.get("/{user_id}/friend-requests/") #Get unanswered requests made to/by a user
 async def list_friend_requests(
-    user_name: str,
+    user_id: int,
     q: Literal["incoming", "outgoing"] = Query(...),
     repo: FriendRepository = Depends(get_friend_repository),
 ):
     if q == "incoming":
-        rows = await repo.view_request_incoming(user_name)
+        rows = await repo.view_request_incoming(user_id)
     else:
-        rows = await repo.view_request_outgoing(user_name)
+        rows = await repo.view_request_outgoing(user_id)
     return [
         {
-            "id": fr.id,
-            "from": fr.requester,
-            "to": fr.receiver,
-            "status": fr.status,
-            "created_at": fr.created_at,
+            "from": fr.requester_id,
+            "to": fr.receiver_id,
+            "sent_timestamp": fr.created_at,
         }
         for fr in rows
     ]
 
-@router.post("/{user_name}/friend-requests/")
-async def send_request(body: SendRequestBody, repo: FriendRepository = Depends(get_friend_repository)):
+@router.post("/{user_id}/friend-requests/") #Create a request
+async def create_friend_request(
+    user_id: int,
+    body: SendRequestBody,
+    repo: FriendRepository = Depends(get_friend_repository),
+    session: Session = Depends(get_db),
+    # current_user: User = Depends(get_current_user)  # when you wire auth
+):
+    # assert current_user.name == user_id  # enforce "authenticated" requirement
+    # Will please help me !!!
+    requester_id = user_id
+    receiver_id = body.other
     try:
-        await repo.send_request(body.requester, body.receiver)
-        return {"ok": True, "message": "Request sent"}
+        await repo.send_request(requester_id, receiver_id)
+        return {"ok": True, "message": "Request sent successfully"}
     except ValueError as e:
-        raise HTTPException(status_code = 400, detail = str(e))
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.put("/{user_id}/friend-requests/{other_id}") #Update a request
+async def update_request_as_requestee(
+    user_id: int,
+    other_id: int,
+    repo: FriendRepository = Depends(get_friend_repository),
+    session: Session = Depends(get_db)
+):
+    # Will please help with the authentication
+    try:
+        await repo.accept_request(user_id, other_id)
+        return {"ok": True, "message": "Request accepted, both are friends now"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@router.delete("/{user_id}/friend-requests/{other_id}") #Delete a request
+async def delete_request_as_requester(
+    user_id: int,
+    other_id: int,
+    repo: FriendRepository = Depends(get_friend_repository),
+    session: Session = Depends(get_db)
+):
+    # Will please help with the authentication
+    try:
+        await repo.delete_request(user_id, other_id)
+        return {"ok": True, "message": "Request deleted successfully"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# Finished friend request, now switch to friendship
+
+@router.get("/{user_id}/friends/") #View friend list
+async def list_friend(
+    user_id: int,
+    repo: FriendRepository = Depends(get_friend_repository),
+    session: Session = Depends(get_db),
+    # current_user: User = Depends(get_current_user)  # when you wire auth
+):
+    # assert current_user.name == user_id  # no auth needed for this function
+    try:
+        rows = await repo.list_friends(user_id)
+        return rows
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@router.get("/{user_id}/friends/{friend_key}") #Get friend by name/id
+async def get_friend_by_key(
+    user_id: int,
+    friend_key: str,  # could be name or id
+    repo: FriendRepository = Depends(get_friend_repository),
+):
+    try:
+        if friend_key.isdigit():
+            friend_id = int(friend_key)
+            return await repo.get_friend_by_id(user_id, friend_id)
+        else:
+            friend_name = friend_key
+            return await repo.get_friend_by_name(user_id, friend_name)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.delete("/{user_id}/friends/{friend_key}") #Delete friend by name/id
+async def delete_friendship_by_key(
+    user_id: int,
+    friend_key: str,
+    repo: FriendRepository = Depends(get_friend_repository),
+):
+    try:
+        if friend_key.isdigit():
+            friend_id = int(friend_key)
+            await repo.delete_friend_by_id(user_id, friend_id)
+        else:
+            friend_name = friend_key
+            await repo.delete_friend_by_name(user_id, friend_name)
+        return {"ok": True, "message": "Deleted successfully, both are no longer friends"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
