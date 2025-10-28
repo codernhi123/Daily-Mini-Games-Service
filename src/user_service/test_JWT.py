@@ -210,7 +210,7 @@ def test_update_user_JWT_token_update_password(client,session):
     assert response2.status_code == 200
     data = response2.json()
     token = data["jwt"]
-
+    
     response3 = client.put("/v2/users/3", json={"new_password": "newfooy", "active_jwt": token})
     assert response3.status_code == 200 
     assert response3.json() == {
@@ -240,6 +240,9 @@ def test_update_user_JWT_token_update_everything(client,session):
     data = response2.json()
     token = data["jwt"]
 
+    expired_fifty_token = datetime.now(timezone.utc) - timedelta(minutes=50)
+    expired = create_access_token(3, expired_fifty_token)
+
     response3 = client.put("/v2/users/3", json={"name": "newfoo", "email": "newfoo@gmail.com", "new_password": "newfooy", "tier": 2, "active_jwt": token})
     assert response3.status_code == 200 
     assert response3.json() == {
@@ -257,3 +260,48 @@ def test_update_user_JWT_token_update_everything(client,session):
     new_password = result.scalar()
     assert password_verification("newfooy", new_password) is True
     assert password_verification("bbb", new_password) is False
+
+def test_update_user_JWT_token_expired_token(client,session):
+    response = client.post(
+        "/v2/users/",
+        json={"name": "bbb", "id": 3, "email": "bbb@gmail.com", "password": "bbb", "tier": 3}
+    )
+    assert response.status_code == 201
+
+    want_fifty_mins_token = datetime.now(timezone.utc) + timedelta(minutes=50)
+    want_fifty_mins_token_str = want_fifty_mins_token.strftime("%Y-%m-%d %H:%M:%S")
+
+    response2 = client.post(
+        "/v2/authentications/",
+        json={"name": "bbb", "password": "bbb", "expiry": want_fifty_mins_token_str}
+    )
+    assert response2.status_code == 200
+
+    expired_fifty_token = datetime.now(timezone.utc) - timedelta(minutes=50)
+    expired_token = create_access_token(3, expired_fifty_token)
+
+    response3 = client.put("/v2/users/3", json={"name": "newfoo", "email": "newfoo@gmail.com", "new_password": "newfooy", "tier": 2, "active_jwt": expired_token})
+    assert response3.status_code == 401 
+    assert response3.json() == {"detail": "Invalid or expired JWT"}
+
+def test_update_user_JWT_token_expired_token(client,session):
+    response = client.post(
+        "/v2/users/",
+        json={"name": "bbb", "id": 3, "email": "bbb@gmail.com", "password": "bbb", "tier": 3}
+    )
+    assert response.status_code == 201
+
+    want_fifty_mins_token = datetime.now(timezone.utc) + timedelta(minutes=50)
+    want_fifty_mins_token_str = want_fifty_mins_token.strftime("%Y-%m-%d %H:%M:%S")
+
+    response2 = client.post(
+        "/v2/authentications/",
+        json={"name": "bbb", "password": "bbb", "expiry": want_fifty_mins_token_str}
+    )
+    assert response2.status_code == 200
+
+    wrong_id_token = create_access_token(100, want_fifty_mins_token)
+
+    response3 = client.put("/v2/users/3", json={"name": "newfoo", "email": "newfoo@gmail.com", "new_password": "newfooy", "tier": 2, "active_jwt": wrong_id_token})
+    assert response3.status_code == 401 
+    assert response3.json() == {"detail": "JWT does not match user"}

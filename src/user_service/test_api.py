@@ -101,7 +101,6 @@ def created_user2(session):
 def test_read_users(client, created_user, created_user2):
     users = [created_user, created_user2]
     response = client.get("/v2/all_users/")
-    print("Response JSON:", response.json())
     assert response.status_code == 200
     assert response.json() == {
         'users': users
