@@ -101,6 +101,7 @@ def created_user2(session):
 def test_read_users(client, created_user, created_user2):
     users = [created_user, created_user2]
     response = client.get("/v2/all_users/")
+    print("Response JSON:", response.json())
     assert response.status_code == 200
     assert response.json() == {
         'users': users
@@ -347,12 +348,24 @@ def test_update_user_name_and_email(client, created_user):
         "user": {"name": "newfoo", "id": 1, "email": "newfoo@gmail.com", "tier": 1}
     }
 
-def test_update_all_user_info(client, created_user):
-    response = client.put("/v2/users/1", json={"name": "newfoo", "email": "newfoo@gmail.com", "password": "fooy", "tier": 4})
+# old pytest
+# def test_update_all_user_info(client, created_user):
+#     response = client.put("/v2/users/1", json={"name": "newfoo", "email": "newfoo@gmail.com", "password": "fooy", "tier": 4})
+#     assert response.status_code == 200
+#     assert response.json() == {
+#         "user": {"name": "newfoo", "id": 1, "email": "newfoo@gmail.com", "tier": 4}
+#     }
+
+def test_update_all_user_info(client, created_user, session):
+    response = client.put("/v2/users/1", json={"name": "newfoo", "email": "newfoo@gmail.com", "password": "fooy", "tier": 4,"new_password": "newfooy"})
     assert response.status_code == 200
     assert response.json() == {
         "user": {"name": "newfoo", "id": 1, "email": "newfoo@gmail.com", "tier": 4}
     }
+    result = session.execute(text("SELECT password FROM users WHERE id = '1'"))
+    new_password = result.scalar()
+    assert password_verification("newfooy", new_password) is True
+    assert password_verification("fooy", new_password) is False
 
 def test_update_user_password(client, created_user, session):
     response = client.put("/v2/users/1", json={"password": "fooy", "new_password": "newfooy"})
@@ -371,7 +384,7 @@ def test_wrong_user_password(client, created_user):
     assert response.json() == {"detail": "Invalid password for update"}
 
 def test_no_user_password_no_JWT(client, created_user):
-    response = client.put("/users/1", json={"name": "newfoo", "email": "newfoo@gmail.com"})
+    response = client.put("/v2/users/1", json={"name": "newfoo", "email": "newfoo@gmail.com"})
     assert response.status_code == 401
     assert response.json() == {"detail": "Password or JWT required"}
 

@@ -95,7 +95,7 @@ async def delete_authentication(jwt_request: DeauthRequest, user_repo: UserRepos
 
     return {"detail": "JWT successfully revoked"}
 
-@app.get("/all_users/", dependencies=[Depends(check_rate_limiter)])
+@app.get("/v2/all_users/", dependencies=[Depends(check_rate_limiter)])
 async def list_users(user_repo: UserRepository = Depends(get_user_repository)):
 
     user_models = await user_repo.get_all()
@@ -141,10 +141,10 @@ async def update_user(id: int, updates: UserSchemaUpdate, user_repo: UserReposit
     try:
         if updates.new_password:
             update_user = await user_repo.update_password(id, updates.new_password)
-            return {"user": UserSchemaReturn.from_db_model(update_user)}
         
         update_user = await user_repo.update_user(id, name=updates.name, email=updates.email, tier=updates.tier)
         return {"user": UserSchemaReturn.from_db_model(update_user)} 
+    
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
     

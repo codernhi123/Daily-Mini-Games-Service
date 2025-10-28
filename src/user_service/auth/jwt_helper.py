@@ -25,7 +25,10 @@ def create_access_token(user_id: int, expiry: datetime) -> str:
     }
 
     s = jwt.encode(header, payload, PRIVATE_KEY)
-    
+
+    if isinstance(s, bytes):
+        s = s.decode("utf-8")
+        
     return s
 
 def validate_jwt(token: str):
