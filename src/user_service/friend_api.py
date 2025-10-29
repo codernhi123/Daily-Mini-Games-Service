@@ -1,23 +1,25 @@
 from typing import Literal, List, Optional
-from fastapi import Depends, HTTPException, APIRouter, Query
+from fastapi import Depends, HTTPException, APIRouter, Query, Header
 from pydantic import BaseModel
 from sqlalchemy import select, and_, delete, update
 from sqlalchemy.orm import Session
+from .models.rate_limiter import check_rate_limiter
+from user_service.auth.jwt_helper import validate_jwt
 
 from .models.friend import FriendRepository, FriendRequest, Friendship, get_friend_repository
-from .models.user import User
-from shared.database import get_db
+from .models.user import User, UserRepository, get_user_repository
+#from shared.database import get_db
 
 router = APIRouter(prefix="/v2/users", tags=["friends"])
 
 class SendRequestBody(BaseModel):
     other: int
 
-@router.get("/{user_id}/friend-requests/") #Get unanswered requests made to/by a user
+@router.get("/{user_id}/friend-requests/", dependencies=[Depends(check_rate_limiter)]) #Get unanswered requests made to/by a user
 async def list_friend_requests(
     user_id: int,
     q: Literal["incoming", "outgoing"] = Query(...),
-    repo: FriendRepository = Depends(get_friend_repository),
+    repo: FriendRepository = Depends(get_friend_repository), 
 ):
     if q == "incoming":
         rows = await repo.view_request_incoming(user_id)
@@ -32,12 +34,12 @@ async def list_friend_requests(
         for fr in rows
     ]
 
-@router.post("/{user_id}/friend-requests/") #Create a request
+@router.post("/{user_id}/friend-requests/", dependencies=[Depends(check_rate_limiter)]) #Create a request
 async def create_friend_request(
     user_id: int,
     body: SendRequestBody,
     repo: FriendRepository = Depends(get_friend_repository),
-    session: Session = Depends(get_db),
+    #session: Session = Depends(get_db),
     # current_user: User = Depends(get_current_user)  # when you wire auth
 ):
     # assert current_user.name == user_id  # enforce "authenticated" requirement
@@ -50,12 +52,12 @@ async def create_friend_request(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.put("/{user_id}/friend-requests/{other_id}") #Update a request
+@router.put("/{user_id}/friend-requests/{other_id}", dependencies=[Depends(check_rate_limiter)]) #Update a request
 async def update_request_as_requestee(
     user_id: int,
     other_id: int,
     repo: FriendRepository = Depends(get_friend_repository),
-    session: Session = Depends(get_db)
+    #session: Session = Depends(get_db)
 ):
     # Will please help with the authentication
     try:
@@ -64,12 +66,12 @@ async def update_request_as_requestee(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-@router.delete("/{user_id}/friend-requests/{other_id}") #Delete a request
+@router.delete("/{user_id}/friend-requests/{other_id}", dependencies=[Depends(check_rate_limiter)]) #Delete a request
 async def delete_request_as_requester(
     user_id: int,
     other_id: int,
     repo: FriendRepository = Depends(get_friend_repository),
-    session: Session = Depends(get_db)
+    #session: Session = Depends(get_db)
 ):
     # Will please help with the authentication
     try:
@@ -80,11 +82,11 @@ async def delete_request_as_requester(
 
 # Finished friend request, now switch to friendship
 
-@router.get("/{user_id}/friends/") #View friend list
+@router.get("/{user_id}/friends/", dependencies=[Depends(check_rate_limiter)]) #View friend list
 async def list_friend(
     user_id: int,
     repo: FriendRepository = Depends(get_friend_repository),
-    session: Session = Depends(get_db),
+    #session: Session = Depends(get_db),
     # current_user: User = Depends(get_current_user)  # when you wire auth
 ):
     # assert current_user.name == user_id  # no auth needed for this function
@@ -94,7 +96,7 @@ async def list_friend(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-@router.get("/{user_id}/friends/{friend_key}") #Get friend by name/id
+@router.get("/{user_id}/friends/{friend_key}", dependencies=[Depends(check_rate_limiter)]) #Get friend by name/id
 async def get_friend_by_key(
     user_id: int,
     friend_key: str,  # could be name or id
@@ -110,7 +112,7 @@ async def get_friend_by_key(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-@router.delete("/{user_id}/friends/{friend_key}") #Delete friend by name/id
+@router.delete("/{user_id}/friends/{friend_key}", dependencies=[Depends(check_rate_limiter)]) #Delete friend by name/id
 async def delete_friendship_by_key(
     user_id: int,
     friend_key: str,

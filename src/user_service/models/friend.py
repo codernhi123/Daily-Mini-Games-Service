@@ -1,24 +1,28 @@
 from datetime import datetime
+from dotenv import load_dotenv
+load_dotenv()
 from fastapi import Depends
 from sqlalchemy import String, Integer, select, insert, update, and_, or_, ForeignKey, UniqueConstraint, Index, delete, CheckConstraint
+from sqlalchemy import DateTime, text
 from sqlalchemy.orm import Mapped, mapped_column, Session
 from sqlalchemy.sql import func
+#from sqlalchemy import case
 
 from .user import Base 
 from .user import User
-from shared.database import get_db
+#from shared.database import get_db
 
 class FriendRequest(Base):
     __tablename__ = "friend_requests"
     id: Mapped[int] = mapped_column(Integer, primary_key = True, autoincrement = True)
     requester_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     receiver_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
-    status: Mapped[str] = mapped_column(String, default = "pending", nullable = False)
-    created_at: Mapped[datetime] = mapped_column(server_default = func.now(), nullable = False)
-
+    status: Mapped[str] = mapped_column(String, server_default=text("'pending'"), nullable = False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("CURRENT_TIMESTAMP"), nullable = False)
     __table_args__ = (
         UniqueConstraint("requester_id", "receiver_id", name="uq_friend_request_pair"),
         Index("ix_friend_requests_receiver_status", "receiver_id", "status"),
+        
         CheckConstraint("requester_id <> receiver_id", name="ck_fr_not_self"),
     )
 
@@ -30,6 +34,7 @@ class Friendship(Base):
     __table_args__ = (
         UniqueConstraint("user_a_id", "user_b_id", name="uq_friend_pair"),
         CheckConstraint("user_a_id <> user_b_id", name="ck_fs_not_self"),
+        CheckConstraint("user_a_id < user_b_id", name="ck_fs_canonical_order"),
     )
 
 class FriendRepository:
@@ -246,5 +251,10 @@ class FriendRepository:
             self.session.rollback()
             raise
 
-def get_friend_repository(db: Session = Depends(get_db)) -> FriendRepository:
+def _get_db_dep():
+    # defer the import so env/engine are ready
+    from shared.database import get_db as real_get_db
+    yield from real_get_db()
+
+def get_friend_repository(db: Session = Depends(_get_db_dep)) -> FriendRepository:
     return FriendRepository(db)

@@ -1,4 +1,6 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
 from datetime import datetime, date, timedelta, timezone
 from fastapi import Query
 from .models.event import (
@@ -13,15 +15,17 @@ from sqlalchemy.exc import IntegrityError
 # from pydantic import TypeAdapter
 import logging
 from nicegui import ui
-from admin import main # noqa: F401
-from dotenv import load_dotenv
 from user_service.auth.jwt_helper import create_access_token, validate_jwt
 from .models.user import UserRepository, AuthRequest, AuthResponse, DeauthRequest, UserSchemaCreate, UserSchemaReturn, UserSchemaUpdate, get_user_repository, password_verification
 from .models.rate_limiter import check_rate_limiter
+from .friend_api import router as friends_router
 
 logger = logging.getLogger('uvicorn.error')
 app = FastAPI()
-load_dotenv()
+
+app.include_router(friends_router)
+
+from admin import main # noqa: F401
 
 @app.post("/v2/users/", status_code=201, dependencies=[Depends(check_rate_limiter)])
 async def create_user(user: UserSchemaCreate, response: Response, user_repo: UserRepository = Depends(get_user_repository)):
