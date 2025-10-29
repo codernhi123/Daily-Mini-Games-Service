@@ -26,7 +26,19 @@ load_dotenv()
 @app.post("/v2/users/", status_code=201, dependencies=[Depends(check_rate_limiter)])
 async def create_user(user: UserSchemaCreate, response: Response, user_repo: UserRepository = Depends(get_user_repository)):
     try:
-        new_user = await user_repo.create_with_id(user.name, user.id, user.email, user.password, user.tier) #can use without id but then we got to change some tests, so leaving as is works for both functions and the local admin
+        new_user = await user_repo.create_with_id(user.name, user.id, user.email, user.password, user.tier) 
+        return {"user": UserSchemaReturn.from_db_model(new_user)}
+    except IntegrityError:
+        response.status_code = 409
+        return {"detail": "Item already exists"}
+    except AssertionError:
+        response.status_code = 422
+        return {"detail": "Empty fields not allowed"}
+    
+@app.post("/users/", status_code=201)
+async def create_user_1(user: UserSchemaCreate, response: Response, user_repo: UserRepository = Depends(get_user_repository)):
+    try:
+        new_user = await user_repo.create_with_id(user.name, user.id, user.email, user.password)
         return {"user": UserSchemaReturn.from_db_model(new_user)}
     except IntegrityError:
         response.status_code = 409
@@ -51,7 +63,16 @@ async def delete_user(id: int, delete: UserSchemaUpdate, user_repo: UserReposito
     await user_repo.delete_by_id(user.id)
     return {"message": f"User '{user.id}' deleted successfully."}
 
-@app.post("/v2/authentications")
+@app.post("/users/delete")
+async def delete_user_1(user: UserSchemaReturn, user_repo: UserRepository = Depends(get_user_repository)):
+    user_to_delete = await user_repo.get_by_name(user.name)
+    if not user_to_delete:
+        return {"message": f"User '{user.name}' does not exist."}
+
+    await user_repo.delete(user_to_delete.name)
+    return {"message": f"User '{user_to_delete.name}' deleted successfully."}
+
+@app.post("/v2/authentications/", dependencies=[Depends(check_rate_limiter)])
 async def become_authenticated(auth_request: AuthRequest, user_repo: UserRepository = Depends(get_user_repository)):
     user = await user_repo.get_by_name(auth_request.name)
 
@@ -82,7 +103,7 @@ async def become_authenticated(auth_request: AuthRequest, user_repo: UserReposit
         jwt=access_token
     )
 
-@app.delete("/v2/authentications")
+@app.delete("/v2/authentications/", dependencies=[Depends(check_rate_limiter)])
 async def delete_authentication(jwt_request: DeauthRequest, user_repo: UserRepository = Depends(get_user_repository)):
     try:
         payload = validate_jwt(jwt_request.jwt)
@@ -94,7 +115,7 @@ async def delete_authentication(jwt_request: DeauthRequest, user_repo: UserRepos
 
     return {"detail": "JWT successfully revoked"}
 
-@app.get("/v2/all_users/", dependencies=[Depends(check_rate_limiter)])
+@app.get("/v2/users/", dependencies=[Depends(check_rate_limiter)])
 async def list_users(user_repo: UserRepository = Depends(get_user_repository)):
 
     user_models = await user_repo.get_all()
@@ -103,6 +124,22 @@ async def list_users(user_repo: UserRepository = Depends(get_user_repository)):
         users.append(UserSchemaReturn.from_db_model(model))
     return {'users': users}
 
+@app.get("/users/")
+async def list_users_1(user_repo: UserRepository = Depends(get_user_repository)):
+
+    user_models = await user_repo.get_all()
+    users = []
+    for model in user_models:
+        users.append(UserSchemaReturn.from_db_model(model))
+    return {'users': users}
+
+@app.get("/v2/users/{id:int}", dependencies=[Depends(check_rate_limiter)])
+async def get_user_by_id(id: int, user_repo: UserRepository = Depends(get_user_repository)):
+    user = await user_repo.get_by_id(id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"user": UserSchemaReturn.from_db_model(user)}
+
 @app.get("/v2/users/{name}", dependencies=[Depends(check_rate_limiter)])
 async def get_user(name: str, user_repo: UserRepository = Depends(get_user_repository)):
     user = await user_repo.get_by_name(name)
@@ -110,12 +147,10 @@ async def get_user(name: str, user_repo: UserRepository = Depends(get_user_repos
         raise HTTPException(status_code=404, detail="User not found")
     return {"user": UserSchemaReturn.from_db_model(user)}
 
-@app.get("/v2/users_by_id/{id}", dependencies=[Depends(check_rate_limiter)])
-async def get_user_by_id(id: int, user_repo: UserRepository = Depends(get_user_repository)):
-    user = await user_repo.get_by_id(id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"user": UserSchemaReturn.from_db_model(user)}
+@app.get("/users/{name}")
+async def get_user_1(name: str, user_repo: UserRepository = Depends(get_user_repository)):
+    user = await user_repo.get_by_name(name)
+    return {"user": user}
 
 @app.put("/v2/users/{id}", dependencies=[Depends(check_rate_limiter)])
 async def update_user(id: int, updates: UserSchemaUpdate, user_repo: UserRepository = Depends(get_user_repository)):
