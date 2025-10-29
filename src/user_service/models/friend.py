@@ -161,9 +161,9 @@ class FriendRepository:
         fr_status =  result.scalar_one_or_none()
 
         if not fr_status:
-            return f"{user_id} and {friend_name} are not friends"
+            return f"You and {friend_name} are not friends"
         else:
-            return f"{user_id} and {friend_name} are friends"
+            return f"You and {friend_name} are friends"
     
     async def get_friend_by_id(self, user_id: int, friend_id: int) -> str:
         a, b = self._ordered_ids(user_id, friend_id)
@@ -176,9 +176,9 @@ class FriendRepository:
         fr_status =  result.scalar_one_or_none()
 
         if not fr_status:
-            return f"{user_id} and {friend_id} are not friends"
+            return f"You and user with ID: {friend_id} are not friends"
         else:
-            return f"{user_id} and {friend_id} are friends"
+            return f"You and user with ID: {friend_id} are friends"
         
     async def delete_friend_by_name(self, user_id: int, friend_name: str):
         try:
