@@ -1,5 +1,5 @@
 import pytest
-#import time
+# import time
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -80,6 +80,7 @@ def created_user2(session):
         session.rollback()
     return {"name": "foob", "id": 2, "email": "foob@gmail.com", "tier": 2}
 
+# @pytest.mark.skip(reason="Slower Test")
 # @pytest.fixture(scope='function')
 # def created_20000_users(client):
 #     user = []
@@ -88,6 +89,7 @@ def created_user2(session):
 #         user.append({"name": f"user{i}", "id": i, "email": f"user{i}@email.com", "password": f"password{i}"})
 #     return user
 
+# @pytest.mark.skip(reason="Slower Test")
 # def test_created_20000_users(client, created_20000_users):
 #     start_time = time.time() 
 #     response = client.get("/v2/users/user5000")
@@ -97,10 +99,12 @@ def created_user2(session):
 #     assert response.status_code == 200
 #     assert response.json() == {"user": {"name": f"user5000", "id": 5000, "email": "user5000@email.com"}}
 #     assert time_elapsed < 0.127
+
+
     
 def test_read_users(client, created_user, created_user2):
     users = [created_user, created_user2]
-    response = client.get("/v2/all_users/")
+    response = client.get("/v2/users/")
     assert response.status_code == 200
     assert response.json() == {
         'users': users
@@ -114,7 +118,7 @@ def test_read_user(client, created_user):
     }
 
 def test_read_user_by_id(client, created_user):
-    response = client.get("/v2/users_by_id/1")
+    response = client.get("/v2/users/1")
     assert response.status_code == 200
     assert response.json() == {
         "user": created_user
