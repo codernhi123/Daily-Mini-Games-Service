@@ -347,15 +347,14 @@ def test_update_user_name_and_email(client, created_user):
         "user": {"name": "newfoo", "id": 1, "email": "newfoo@gmail.com", "tier": 1}
     }
 
-# old pytest
-# def test_update_all_user_info(client, created_user):
-#     response = client.put("/v2/users/1", json={"name": "newfoo", "email": "newfoo@gmail.com", "password": "fooy", "tier": 4})
-#     assert response.status_code == 200
-#     assert response.json() == {
-#         "user": {"name": "newfoo", "id": 1, "email": "newfoo@gmail.com", "tier": 4}
-#     }
+def test_update_all_user_info(client, created_user):
+    response = client.put("/v2/users/1", json={"name": "newfoo", "email": "newfoo@gmail.com", "password": "fooy", "tier": 4})
+    assert response.status_code == 200
+    assert response.json() == {
+        "user": {"name": "newfoo", "id": 1, "email": "newfoo@gmail.com", "tier": 4}
+    }
 
-def test_update_all_user_info(client, created_user, session):
+def test_update_all_user_info_and_newpassword(client, created_user, session):
     response = client.put("/v2/users/1", json={"name": "newfoo", "email": "newfoo@gmail.com", "password": "fooy", "tier": 4,"new_password": "newfooy"})
     assert response.status_code == 200
     assert response.json() == {
