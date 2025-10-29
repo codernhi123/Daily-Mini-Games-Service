@@ -65,7 +65,7 @@ class UserRepository:
         return result
     
     async def delete_by_id(self, id: int) -> None:
-        await self.get_by_name(id)
+        await self.get_by_id(id)
         stmt = delete(User).where(User.id == id)
         result = self.session.execute(stmt)
         self.session.commit()

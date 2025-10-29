@@ -2,7 +2,10 @@ import time
 from typing import Dict, Optional, Tuple
 from fastapi import Request, HTTPException
 from dataclasses import dataclass
-
+from user_service.auth.jwt_helper import validate_jwt
+from user_service.models.user import User
+from shared.database import get_db
+from sqlalchemy import select
 @dataclass
 class RateLimitWindow:
     count: int
@@ -78,7 +81,27 @@ class RateLimiter:
 rate_limiter = RateLimiter()
 
 def extract_user_JWT(request: Request) -> Optional[Tuple[int, int]]:
-    return None
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return None
+    token = auth_header.split(" ", 1)[1]
+
+    try: 
+        payload = validate_jwt(token)
+        id = int(payload["sub"])
+        db = next(get_db())
+        stmt = select(User).where(User.id==id)
+        user = db.scalar(stmt)
+
+        if not user:
+            return None
+        
+        if user.active_jwt != token:
+            return None
+        
+        return (id, user.tier)
+    except (ValueError, KeyError, StopIteration, Exception):
+        return None
 
 async def check_rate_limiter(request: Request):
     user = extract_user_JWT(request)
