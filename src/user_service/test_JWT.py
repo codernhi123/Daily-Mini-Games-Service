@@ -301,3 +301,39 @@ def test_update_user_JWT_token_wrong_id_token(client,session):
     response3 = client.put("/v2/users/3", json={"name": "newfoo", "email": "newfoo@gmail.com", "new_password": "newfooy", "tier": 2, "active_jwt": wrong_id_token})
     assert response3.status_code == 401 
     assert response3.json() == {"detail": "JWT does not match user"}
+
+def test_get_authenticated_bad_username(client):
+    response = client.post(
+        "/v2/users/",
+        json={"name": "bbb", "id": 3, "email": "bbb@gmail.com", "password": "bbb", "tier": 3}
+    )
+    assert response.status_code == 201
+
+    ten_minutes_past_token = datetime.now(timezone.utc) - timedelta(minutes=10)
+    ten_minutes_past_token_str = ten_minutes_past_token.strftime("%Y-%m-%d %H:%M:%S")
+
+    response2 = client.post(
+        "/v2/authentications/",
+        json={"name": "BADUSERNAME", "password": "bbb", "expiry": ten_minutes_past_token_str}
+    )
+
+    assert response2.status_code == 401
+    assert response2.json() == {"detail": "Invalid credentials"}
+
+def test_get_authenticated_bad_password(client):
+    response = client.post(
+        "/v2/users/",
+        json={"name": "bbb", "id": 3, "email": "bbb@gmail.com", "password": "bbb", "tier": 3}
+    )
+    assert response.status_code == 201
+
+    ten_minutes_past_token = datetime.now(timezone.utc) - timedelta(minutes=10)
+    ten_minutes_past_token_str = ten_minutes_past_token.strftime("%Y-%m-%d %H:%M:%S")
+
+    response2 = client.post(
+        "/v2/authentications/",
+        json={"name": "bbb", "password": "BADPASSWORD", "expiry": ten_minutes_past_token_str}
+    )
+
+    assert response2.status_code == 401
+    assert response2.json() == {"detail": "Invalid credentials"}
