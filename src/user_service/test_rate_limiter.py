@@ -16,6 +16,8 @@ def reset_rate_limiter():
     rate_limiter.authenticated_windows.clear()
     rate_limiter.unauthenticated_windows.clear()
     yield
+    rate_limiter.authenticated_windows.clear()
+    rate_limiter.unauthenticated_windows.clear()
 
 @pytest.fixture
 def client():
@@ -64,7 +66,7 @@ def test_rate_limiter_authenticated_tier_3():
         assert limiter.check_authenticated_limit(id=1, tier=3) == truth
     assert limiter.check_authenticated_limit(id=1, tier=3) == lies
 
-@pytest.mark.skip(reason="Slower Test")
+# @pytest.mark.skip(reason="Slower Test")
 def test_rate_limiter_window_reset_authenticated():
     limiter = RateLimiter()
 
@@ -72,17 +74,17 @@ def test_rate_limiter_window_reset_authenticated():
     assert limiter.check_authenticated_limit(id=1, tier=1) == truth
     assert limiter.check_authenticated_limit(id=1, tier=1) == lies
 
-    time.sleep(10.1)
+    time.sleep(10)
     assert limiter.check_authenticated_limit(id=1, tier=1) == truth
 
-@pytest.mark.skip(reason="Slower Test")
+# @pytest.mark.skip(reason="Slower Test")
 def test_rate_limiter_window_reset_unauthenticated():
     limiter = RateLimiter()
 
     assert limiter.check_unauthenticated_limit(address="mystery_ip_123") == truth
     assert limiter.check_unauthenticated_limit(address="mystery_ip_123") == lies
 
-    time.sleep(10.1)
+    time.sleep(10)
     assert limiter.check_unauthenticated_limit(address="mystery_ip_123") == truth
 
 def test_rate_limiter_different_users_authenticated():
@@ -111,7 +113,7 @@ def test_rate_limiter_different_users_unauthenticated():
     assert limiter.check_unauthenticated_limit(address="mystery_ip_456") == truth
     assert limiter.check_unauthenticated_limit(address="mystery_ip_456") == lies
 
-@pytest.mark.skip(reason="Slower Test")
+# @pytest.mark.skip(reason="Slower Test")
 def test_rate_limit_for_endpoint_unauthenticated(client):
     response = client.get("/v2/users/")
     assert response.status_code == 200
@@ -119,7 +121,7 @@ def test_rate_limit_for_endpoint_unauthenticated(client):
     response = client.get("/v2/users/")
     assert response.status_code == 429
 
-    time.sleep(10.1)
+    time.sleep(10)
     response = client.get("/v2/users/")
     assert response.status_code == 200
 
@@ -133,7 +135,7 @@ def test_rate_limiter_deny_requests(client):
         response = client.get("/v2/users/")
         assert response.status_code == 429
 
-@pytest.mark.skip(reason="Slower Test")
+# @pytest.mark.skip(reason="Slower Test")
 def test_rate_limiter_cleanup():
     limiter = RateLimiter()
 
@@ -144,7 +146,7 @@ def test_rate_limiter_cleanup():
     assert len(limiter.authenticated_windows) == 2
     assert len(limiter.unauthenticated_windows) == 1
 
-    time.sleep(10.1)
+    time.sleep(10)
 
     limiter.cleanup_windows()
 
@@ -154,7 +156,7 @@ def test_rate_limiter_cleanup():
 def test_authenticated_user_tier_1(client_selective_rate_limiting):
     client_selective_rate_limiting.post(
         "/v2/users/",
-        json={"name": "foo", "id": 1, "email": "foo@gmail.com", "password": "fooy", "tier": 1}
+        json={"name": "foo", "id": 1000, "email": "foo@gmail.com", "password": "fooy", "tier": 1}
     )
     auth_response = client_selective_rate_limiting.post(
         "/v2/authentications/",
@@ -172,14 +174,14 @@ def test_authenticated_user_tier_1(client_selective_rate_limiting):
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
     assert response.status_code == 429
     client_selective_rate_limiting.post(
-        "/v2/users/1", json = {"password": "fooy"}
+        "/v2/users/1000", json = {"password": "fooy"}
     )
 
 
 def test_authenticated_user_tier_3(client_selective_rate_limiting):
     client_selective_rate_limiting.post(
         "/v2/users/",
-        json={"name": "foo2", "id": 2, "email": "foo2@gmail.com", "password": "fooy", "tier": 3}
+        json={"name": "foo2", "id": 2000, "email": "foo2@gmail.com", "password": "fooy", "tier": 3}
     )
     auth_response = client_selective_rate_limiting.post(
         "/v2/authentications/",
@@ -195,15 +197,15 @@ def test_authenticated_user_tier_3(client_selective_rate_limiting):
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
     assert response.status_code == 429
     client_selective_rate_limiting.post(
-        "/v2/users/2", json = {"password": "fooy"}
+        "/v2/users/2000", json = {"password": "fooy"}
     )
 
 
-@pytest.mark.skip(reason="Slower Test")
+# @pytest.mark.skip(reason="Slower Test")
 def test_revoked_jwt_user(client_selective_rate_limiting):
     client_selective_rate_limiting.post(
         "/v2/users/",
-        json={"name": "foo3", "id": 3, "email": "foo3@gmail.com", "password": "fooy", "tier": 2}
+        json={"name": "foo3", "id": 3000, "email": "foo3@gmail.com", "password": "fooy", "tier": 2}
     )
     auth_response = client_selective_rate_limiting.post(
         "/v2/authentications/",
@@ -222,7 +224,7 @@ def test_revoked_jwt_user(client_selective_rate_limiting):
         json=({"jwt": token}),
     )
 
-    time.sleep(10.1)
+    time.sleep(10)
 
 
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
@@ -231,7 +233,7 @@ def test_revoked_jwt_user(client_selective_rate_limiting):
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
     assert response.status_code == 429
     client_selective_rate_limiting.post(
-        "/v2/users/3", json = {"password": "fooy"}
+        "/v2/users/3000", json = {"password": "fooy"}
     )
 
 
@@ -257,7 +259,7 @@ def test_expired_jwt_user(client_selective_rate_limiting):
 
     client_selective_rate_limiting.post(
         "/v2/users/",
-        json={"name": "foo4", "id": 4, "email": "foo4@gmail.com", "password": "fooy", "tier": 2}
+        json={"name": "foo4", "id": 4000, "email": "foo4@gmail.com", "password": "fooy", "tier": 2}
     )
     auth_response = client_selective_rate_limiting.post(
         "/v2/authentications/",
@@ -274,7 +276,7 @@ def test_expired_jwt_user(client_selective_rate_limiting):
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
     assert response.status_code == 429
     client_selective_rate_limiting.post(
-        "/v2/users/4", json = {"password": "fooy"}
+        "/v2/users/4000", json = {"password": "fooy"}
     )
 
 
@@ -282,11 +284,11 @@ def test_expired_jwt_user(client_selective_rate_limiting):
 def test_rate_limiter_different_users_authenticated_with_jwt(client_selective_rate_limiting):
     client_selective_rate_limiting.post(
         "/v2/users/",
-        json={"name": "foo5", "id": 5, "email": "foo5@gmail.com", "password": "fooy", "tier": 1}
+        json={"name": "foo5", "id": 5000, "email": "foo5@gmail.com", "password": "fooy", "tier": 1}
     )
     client_selective_rate_limiting.post(
         "/v2/users/",
-        json={"name": "foo6", "id": 6, "email": "foo6@gmail.com", "password": "fooy", "tier": 1}
+        json={"name": "foo6", "id": 6000, "email": "foo6@gmail.com", "password": "fooy", "tier": 1}
     )
     token_1 = client_selective_rate_limiting.post(
         "/v2/authentications/",
@@ -304,17 +306,17 @@ def test_rate_limiter_different_users_authenticated_with_jwt(client_selective_ra
     response_2 = client_selective_rate_limiting.get("/v2/users/", headers={"Authorization": f"Bearer {token_2}"})
     assert response_2.status_code == 200 
     client_selective_rate_limiting.post(
-        "/v2/users/5", json = {"password": "fooy"}
+        "/v2/users/5000", json = {"password": "fooy"}
     )
     client_selective_rate_limiting.post(
-        "/v2/users/6", json = {"password": "fooy"}
+        "/v2/users/6000", json = {"password": "fooy"}
     )
 
-@pytest.mark.skip(reason="Slower Test")
+# @pytest.mark.skip(reason="Slower Test")
 def test_jwt_rate_limit_window_reset(client_selective_rate_limiting):
     client_selective_rate_limiting.post(
         "/v2/users/",
-        json={"name": "foo7", "id": 7, "email": "foo7@gmail.com", "password": "fooy", "tier": 1}
+        json={"name": "foo7", "id": 7000, "email": "foo7@gmail.com", "password": "fooy", "tier": 1}
     )
     auth_response = client_selective_rate_limiting.post(
         "/v2/authentications/",
@@ -330,18 +332,18 @@ def test_jwt_rate_limit_window_reset(client_selective_rate_limiting):
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
     assert response.status_code == 429
 
-    time.sleep(10.1)
+    time.sleep(10)
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
     assert response.status_code == 200
     client_selective_rate_limiting.post(
-        "/v2/users/7", json = {"password": "fooy"}
+        "/v2/users/7000", json = {"password": "fooy"}
     )
 
 
 def test_both_types_of_user_limits(client_selective_rate_limiting):
     client_selective_rate_limiting.post(
         "/v2/users/",
-        json={"name": "foo8", "id": 8, "email": "foo8@gmail.com", "password": "fooy", "tier": 1}
+        json={"name": "foo8", "id": 8000, "email": "foo8@gmail.com", "password": "fooy", "tier": 1}
     )
     auth_response = client_selective_rate_limiting.post(
         "/v2/authentications/",
@@ -362,7 +364,7 @@ def test_both_types_of_user_limits(client_selective_rate_limiting):
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
     assert response.status_code == 429
     client_selective_rate_limiting.post(
-        "/v2/users/8", json = {"password": "fooy"}
+        "/v2/users/8000", json = {"password": "fooy"}
     )
 
 
@@ -376,7 +378,7 @@ def test_incomplete_authorization_header(client):
 def test_jwt_deleted_user(client_selective_rate_limiting):
     client_selective_rate_limiting.post(
         "/v2/users/",
-        json={"name": "foo9", "id": 9, "email": "foo9@gmail.com", "password": "fooy", "tier": 1}
+        json={"name": "foo9", "id": 9000, "email": "foo9@gmail.com", "password": "fooy", "tier": 1}
     )
     auth_response = client_selective_rate_limiting.post(
         "/v2/authentications/",
@@ -386,7 +388,7 @@ def test_jwt_deleted_user(client_selective_rate_limiting):
     headers = {"Authorization": f"Bearer {token}"}
 
     client_selective_rate_limiting.post(
-        "/v2/users/9", json = {"password": "fooy"}
+        "/v2/users/9000", json = {"password": "fooy"}
     )
     rate_limiter.authenticated_windows.clear()
     rate_limiter.unauthenticated_windows.clear()
@@ -399,7 +401,7 @@ def test_jwt_deleted_user(client_selective_rate_limiting):
 def test_different_tier_limits(client_selective_rate_limiting):
     client_selective_rate_limiting.post(
         "/v2/users/",
-        json={"name": "foo10", "id": 10, "email": "foo10@gmail.com", "password": "fooy", "tier": 1}
+        json={"name": "foo10", "id": 10000, "email": "foo10@gmail.com", "password": "fooy", "tier": 1}
     )
     auth_response = client_selective_rate_limiting.post(
         "/v2/authentications/",
@@ -410,7 +412,7 @@ def test_different_tier_limits(client_selective_rate_limiting):
 
     client_selective_rate_limiting.post(
         "/v2/users/",
-        json={"name": "foo100", "id": 100, "email": "foo100@gmail.com", "password": "fooy", "tier": 2}
+        json={"name": "foo100", "id": 100000, "email": "foo100@gmail.com", "password": "fooy", "tier": 2}
     )
     auth_response = client_selective_rate_limiting.post(
         "/v2/authentications/",
@@ -437,9 +439,9 @@ def test_different_tier_limits(client_selective_rate_limiting):
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers_2)
     assert response.status_code == 429
     client_selective_rate_limiting.post(
-        "/v2/users/10", json = {"password": "fooy"}
+        "/v2/users/10000", json = {"password": "fooy"}
     )
     client_selective_rate_limiting.post(
-        "/v2/users/100", json = {"password": "fooy"}
+        "/v2/users/100000", json = {"password": "fooy"}
     )
     
