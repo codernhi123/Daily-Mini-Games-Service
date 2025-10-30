@@ -72,7 +72,7 @@ def test_rate_limiter_window_reset_authenticated():
     assert limiter.check_authenticated_limit(id=1, tier=1) == truth
     assert limiter.check_authenticated_limit(id=1, tier=1) == lies
 
-    time.sleep(10.1)
+    time.sleep(10)
     assert limiter.check_authenticated_limit(id=1, tier=1) == truth
 
 # @pytest.mark.skip(reason="Slower Test")
@@ -82,7 +82,7 @@ def test_rate_limiter_window_reset_unauthenticated():
     assert limiter.check_unauthenticated_limit(address="mystery_ip_123") == truth
     assert limiter.check_unauthenticated_limit(address="mystery_ip_123") == lies
 
-    time.sleep(10.1)
+    time.sleep(10)
     assert limiter.check_unauthenticated_limit(address="mystery_ip_123") == truth
 
 def test_rate_limiter_different_users_authenticated():
@@ -119,7 +119,7 @@ def test_rate_limit_for_endpoint_unauthenticated(client):
     response = client.get("/v2/users/")
     assert response.status_code == 429
 
-    time.sleep(10.1)
+    time.sleep(10)
     response = client.get("/v2/users/")
     assert response.status_code == 200
 
@@ -144,7 +144,7 @@ def test_rate_limiter_cleanup():
     assert len(limiter.authenticated_windows) == 2
     assert len(limiter.unauthenticated_windows) == 1
 
-    time.sleep(10.1)
+    time.sleep(10)
 
     limiter.cleanup_windows()
 
@@ -222,7 +222,7 @@ def test_revoked_jwt_user(client_selective_rate_limiting):
         json=({"jwt": token}),
     )
 
-    time.sleep(10.1)
+    time.sleep(10)
 
 
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
@@ -330,7 +330,7 @@ def test_jwt_rate_limit_window_reset(client_selective_rate_limiting):
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
     assert response.status_code == 429
 
-    time.sleep(10.1)
+    time.sleep(10)
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
     assert response.status_code == 200
     client_selective_rate_limiting.post(
