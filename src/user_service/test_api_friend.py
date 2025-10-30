@@ -159,6 +159,7 @@ def test_create_friend_request_a_to_a(client, user_a_with_auth):
         json={"other": f"{user_a_id}"}
     )
     assert response_send.status_code == 400
+    assert response_send.json()["detail"] == "Cannot make friend with yourself"
 
 def test_create_friend_request_a_to_b_with_wrong_auth(client, user_a_with_auth, user_b):
     user_a_id = user_a_with_auth["user"]["id"]
@@ -169,6 +170,34 @@ def test_create_friend_request_a_to_b_with_wrong_auth(client, user_a_with_auth, 
         json={"other": f"{user_b_id}"}
     )
     assert response_send.status_code == 401 #wrong auth error expected
+
+def test_create_friend_request_duplicated(client, user_a_with_auth, user_b_with_auth):
+    token_a = user_a_with_auth["token"]
+    token_b = user_b_with_auth["token"]
+    user_a_id = user_a_with_auth["user"]["id"]
+    user_b_id = user_b_with_auth["user"]["id"]
+    client.post(
+        f"/v2/users/{user_a_id}/friend-requests/?token={token_a}",
+        json={"other": f"{user_b_id}"}
+    )
+
+    response_send = client.post(
+        f"/v2/users/{user_b_id}/friend-requests/?token={token_b}",
+        json={"other": f"{user_a_id}"}
+    )
+    assert response_send.status_code == 400
+    assert response_send.json()["detail"] == "A pending request already exists between these users"
+
+def test_update_nonexist_friend_request(client, user_a_with_auth, user_b_with_auth):
+    token_b = user_b_with_auth["token"]
+    user_a_id = user_a_with_auth["user"]["id"]
+    user_b_id = user_b_with_auth["user"]["id"]
+
+    response_acp = client.put(
+        f"/v2/users/{user_b_id}/friend-requests/{user_a_id}/?token={token_b}"
+    )
+    assert response_acp.status_code == 400
+    assert response_acp.json()["detail"] == "No pending request to accept"
 
 def test_b_list_friend_request(client, user_a_with_auth, user_b):
     token_a = user_a_with_auth["token"]
@@ -205,6 +234,16 @@ def test_a_delete_friend_request_to_b(client, user_a_with_auth, user_b):
     assert response_del.status_code == 200
     assert response_del.json()["ok"] is True
 
+def test_delete_friend_nonexist_request(client, user_a_with_auth):
+    token_a = user_a_with_auth["token"]
+    user_a_id = user_a_with_auth["user"]["id"]
+
+    response_del = client.delete(
+        f"/v2/users/{user_a_id}/friend-requests/45/?token={token_a}"
+    )
+    assert response_del.status_code == 400
+    assert response_del.json()["detail"] == "No request to cancel"
+
 def test_b_accept_friend_request_from_a(client, user_a_with_auth, user_b_with_auth):
     token_a = user_a_with_auth["token"]
     token_b = user_b_with_auth["token"]
@@ -221,6 +260,16 @@ def test_b_accept_friend_request_from_a(client, user_a_with_auth, user_b_with_au
     assert response_acp.status_code == 200
     assert response_acp.json()["ok"] is True
 
+def test_b_accept_nonexist_friend_request(client, user_b_with_auth):
+    token_b = user_b_with_auth["token"]
+    user_b_id = user_b_with_auth["user"]["id"]
+
+    response_acp = client.put(
+        f"/v2/users/{user_b_id}/friend-requests/45/?token={token_b}"
+    )
+    assert response_acp.status_code == 400
+    assert response_acp.json()["detail"] == "No pending request to accept"
+
 def test_accept_from_unrelated_user(client, user_a_with_auth, user_b_with_auth, user_c_with_auth):
     token_a = user_a_with_auth["token"]
     token_b = user_b_with_auth["token"]
@@ -236,6 +285,26 @@ def test_accept_from_unrelated_user(client, user_a_with_auth, user_b_with_auth, 
         f"/v2/users/{user_c_id}/friend-requests/{user_a_id}/?token={token_b}"
     )
     assert response_acp.status_code == 401
+
+def test_send_friend_request_to_friends(client, user_a_with_auth, user_b_with_auth):
+    token_a = user_a_with_auth["token"]
+    token_b = user_b_with_auth["token"]
+    user_a_id = user_a_with_auth["user"]["id"]
+    user_b_id = user_b_with_auth["user"]["id"]
+    client.post(
+        f"/v2/users/{user_a_id}/friend-requests/?token={token_a}",
+        json={"other": user_b_id}
+    )
+    client.put(
+        f"/v2/users/{user_b_id}/friend-requests/{user_a_id}/?token={token_b}"
+    )
+
+    response_send = client.post(
+        f"/v2/users/{user_b_id}/friend-requests/?token={token_b}",
+        json={"other": f"{user_a_id}"}
+    )
+    assert response_send.status_code == 400
+    assert response_send.json()["detail"] == "Already been friends"
 
 def test_check_list_friends(client, user_a_with_auth, user_b_with_auth):
     token_a = user_a_with_auth["token"]
@@ -330,6 +399,22 @@ def test_delete_friend_by_id(client, user_a_with_auth, user_b_with_auth):
     assert response.status_code == 200
     assert response.json()["ok"] is True
 
+def test_delete_nonexist_friend_by_id(client, user_a_with_auth, user_b_with_auth):
+    token_a = user_a_with_auth["token"]
+    user_a_id = user_a_with_auth["user"]["id"]
+    user_b_id = user_b_with_auth["user"]["id"]
+    #user_b_name = user_b_with_auth["user"]["name"]
+    client.post(
+        f"/v2/users/{user_a_id}/friend-requests/?token={token_a}",
+        json={"other": user_b_id}
+    )
+
+    response = client.delete(
+        f"/v2/users/{user_a_id}/friends/{user_b_id}/?token={token_a}"
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Friendship does not exist to be deleted"
+
 def test_delete_friend_by_name(client, user_a_with_auth, user_b_with_auth):
     token_a = user_a_with_auth["token"]
     token_b = user_b_with_auth["token"]
@@ -349,3 +434,31 @@ def test_delete_friend_by_name(client, user_a_with_auth, user_b_with_auth):
     )
     assert response.status_code == 200
     assert response.json()["ok"] is True
+
+def test_delete_nonexist_friend_by_name(client, user_a_with_auth, user_b_with_auth):
+    token_a = user_a_with_auth["token"]
+    token_b = user_b_with_auth["token"]
+    user_a_id = user_a_with_auth["user"]["id"]
+    user_b_id = user_b_with_auth["user"]["id"]
+    user_a_name = user_a_with_auth["user"]["name"]
+    client.post(
+        f"/v2/users/{user_a_id}/friend-requests/?token={token_a}",
+        json={"other": user_b_id}
+    )
+
+    response = client.delete(
+        f"/v2/users/{user_b_id}/friends/{user_a_name}/?token={token_b}"
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == f"No friendship found between {user_b_id} and {user_a_name}"
+
+def test_delete_friend_with_yourself_by_name(client, user_a_with_auth):
+    token_a = user_a_with_auth["token"]
+    user_a_id = user_a_with_auth["user"]["id"]
+    user_a_name = user_a_with_auth["user"]["name"]
+
+    response = client.delete(
+        f"/v2/users/{user_a_id}/friends/{user_a_name}/?token={token_a}"
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == f"No friendship found between {user_a_id} and {user_a_name}"
