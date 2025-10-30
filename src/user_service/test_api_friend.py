@@ -150,6 +150,16 @@ def test_create_friend_request_a_to_b(client, user_a_with_auth, user_b):
     assert response_send.status_code == 201
     assert response_send.json()["ok"] is True
 
+def test_create_friend_request_a_to_a(client, user_a_with_auth):
+    token_a = user_a_with_auth["token"]
+    user_a_id = user_a_with_auth["user"]["id"]
+
+    response_send = client.post(
+        f"/v2/users/{user_a_id}/friend-requests/?token={token_a}",
+        json={"other": f"{user_a_id}"}
+    )
+    assert response_send.status_code == 400
+
 def test_create_friend_request_a_to_b_with_wrong_auth(client, user_a_with_auth, user_b):
     user_a_id = user_a_with_auth["user"]["id"]
     user_b_id = user_b["id"]
