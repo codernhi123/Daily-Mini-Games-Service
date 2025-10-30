@@ -143,7 +143,7 @@ async def get_friend_by_key(
         raise HTTPException(status_code=404, detail=str(e))
 
 @router.delete("/{user_id}/friends/{friend_id_or_name}", dependencies=[Depends(check_rate_limiter)]) #Delete friend by name/id
-async def delete_friendship_by_key(
+async def delete_friendship_by_id_or_name(
     user_id: int,
     friend_id_or_name: str,
     _auth_user_id: int = Depends(require_auth_user),
