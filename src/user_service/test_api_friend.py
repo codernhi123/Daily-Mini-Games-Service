@@ -114,6 +114,30 @@ def user_b_with_auth(session):
         "token": token
     }
 
+@pytest.fixture(scope='function')
+def user_c_with_auth(session):
+    plain_password = "password_c"
+    hashed_password = password_hash(plain_password)
+    user_data = {"name": "c", "id": 3, "email": "c@gmail.com", "password": hashed_password, "tier": 1}
+    expires = datetime.now(timezone.utc) + timedelta(minutes=30)
+    token = create_access_token(
+        user_id=user_data["id"], 
+        expiry=expires
+    )
+    user_data["active_jwt"] = token
+    try:
+        session.execute(text("""INSERT INTO users (name, id, email, password, tier, active_jwt) VALUES (:name, :id, :email, :password, :tier, :active_jwt)"""), user_data)
+        session.commit()
+    except Exception as e:
+        print(f"Error creating user in fixture: {e}")
+        session.rollback()
+        raise
+
+    return {
+        "user": {"name": "c", "id": 3, "email": "c@gmail.com", "tier": 1},
+        "token": token
+    }
+
 def test_create_friend_request_a_to_b(client, user_a_with_auth, user_b):
     token_a = user_a_with_auth["token"]
     user_a_id = user_a_with_auth["user"]["id"]
@@ -136,7 +160,7 @@ def test_create_friend_request_a_to_b_with_wrong_auth(client, user_a_with_auth, 
     )
     assert response_send.status_code == 401 #wrong auth error expected
 
-def test_b_accept_friend_request(client, user_a_with_auth, user_b):
+def test_b_list_friend_request(client, user_a_with_auth, user_b):
     token_a = user_a_with_auth["token"]
     user_a_id = user_a_with_auth["user"]["id"]
     user_b_id = user_b["id"]
@@ -156,7 +180,7 @@ def test_b_accept_friend_request(client, user_a_with_auth, user_b):
     assert request_data["from"] == user_a_id
     assert request_data["to"] == user_b_id
 
-def test_a_delete_friend_request_with_b(client, user_a_with_auth, user_b):
+def test_a_delete_friend_request_to_b(client, user_a_with_auth, user_b):
     token_a = user_a_with_auth["token"]
     user_a_id = user_a_with_auth["user"]["id"]
     user_b_id = user_b["id"]
@@ -171,7 +195,7 @@ def test_a_delete_friend_request_with_b(client, user_a_with_auth, user_b):
     assert response_del.status_code == 200
     assert response_del.json()["ok"] is True
 
-def test_b_accept_friend_request_of_a(client, user_a_with_auth, user_b_with_auth):
+def test_b_accept_friend_request_from_a(client, user_a_with_auth, user_b_with_auth):
     token_a = user_a_with_auth["token"]
     token_b = user_b_with_auth["token"]
     user_a_id = user_a_with_auth["user"]["id"]
@@ -186,6 +210,22 @@ def test_b_accept_friend_request_of_a(client, user_a_with_auth, user_b_with_auth
     )
     assert response_acp.status_code == 200
     assert response_acp.json()["ok"] is True
+
+def test_accept_from_unrelated_user(client, user_a_with_auth, user_b_with_auth, user_c_with_auth):
+    token_a = user_a_with_auth["token"]
+    token_b = user_b_with_auth["token"]
+    user_a_id = user_a_with_auth["user"]["id"]
+    user_b_id = user_b_with_auth["user"]["id"]
+    user_c_id = user_c_with_auth["user"]["id"]
+    client.post(
+        f"/v2/users/{user_a_id}/friend-requests/?token={token_a}",
+        json={"other": user_b_id}
+    )
+
+    response_acp = client.put(
+        f"/v2/users/{user_c_id}/friend-requests/{user_a_id}/?token={token_b}"
+    )
+    assert response_acp.status_code == 401
 
 def test_check_list_friends(client, user_a_with_auth, user_b_with_auth):
     token_a = user_a_with_auth["token"]
