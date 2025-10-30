@@ -16,6 +16,8 @@ def reset_rate_limiter():
     rate_limiter.authenticated_windows.clear()
     rate_limiter.unauthenticated_windows.clear()
     yield
+    rate_limiter.authenticated_windows.clear()
+    rate_limiter.unauthenticated_windows.clear()
 
 @pytest.fixture
 def client():
