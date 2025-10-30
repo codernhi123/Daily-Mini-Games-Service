@@ -25,7 +25,9 @@ def client():
 @pytest.fixture
 def client_selective_rate_limiting():
     async def selective_rate_limit(request: Request):
-        if request.method == "POST" and request.url.path in ["/v2/users/", "/v2/authentications/"]:
+        if request.method == "POST" and (
+            request.url.path in ["/v2/users/", "/v2/authentications/"] or request.url.path.startswith("/v2/users/")
+            ):
             return
         return await check_rate_limiter(request)
 
@@ -169,6 +171,10 @@ def test_authenticated_user_tier_1(client_selective_rate_limiting):
 
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
     assert response.status_code == 429
+    client_selective_rate_limiting.post(
+        "/v2/users/1", json = {"password": "fooy"}
+    )
+
 
 def test_authenticated_user_tier_3(client_selective_rate_limiting):
     client_selective_rate_limiting.post(
@@ -188,6 +194,10 @@ def test_authenticated_user_tier_3(client_selective_rate_limiting):
 
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
     assert response.status_code == 429
+    client_selective_rate_limiting.post(
+        "/v2/users/2", json = {"password": "fooy"}
+    )
+
 
 @pytest.mark.skip(reason="Slower Test")
 def test_revoked_jwt_user(client_selective_rate_limiting):
@@ -220,6 +230,10 @@ def test_revoked_jwt_user(client_selective_rate_limiting):
 
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
     assert response.status_code == 429
+    client_selective_rate_limiting.post(
+        "/v2/users/3", json = {"password": "fooy"}
+    )
+
 
 def test_no_jwt_user(client):
     response = client.get("/v2/users/")
@@ -259,6 +273,10 @@ def test_expired_jwt_user(client_selective_rate_limiting):
 
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
     assert response.status_code == 429
+    client_selective_rate_limiting.post(
+        "/v2/users/4", json = {"password": "fooy"}
+    )
+
 
 
 def test_rate_limiter_different_users_authenticated_with_jwt(client_selective_rate_limiting):
@@ -285,6 +303,12 @@ def test_rate_limiter_different_users_authenticated_with_jwt(client_selective_ra
 
     response_2 = client_selective_rate_limiting.get("/v2/users/", headers={"Authorization": f"Bearer {token_2}"})
     assert response_2.status_code == 200 
+    client_selective_rate_limiting.post(
+        "/v2/users/5", json = {"password": "fooy"}
+    )
+    client_selective_rate_limiting.post(
+        "/v2/users/6", json = {"password": "fooy"}
+    )
 
 @pytest.mark.skip(reason="Slower Test")
 def test_jwt_rate_limit_window_reset(client_selective_rate_limiting):
@@ -309,6 +333,9 @@ def test_jwt_rate_limit_window_reset(client_selective_rate_limiting):
     time.sleep(10.1)
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
     assert response.status_code == 200
+    client_selective_rate_limiting.post(
+        "/v2/users/7", json = {"password": "fooy"}
+    )
 
 
 def test_both_types_of_user_limits(client_selective_rate_limiting):
@@ -334,6 +361,10 @@ def test_both_types_of_user_limits(client_selective_rate_limiting):
     assert response.status_code == 200
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
     assert response.status_code == 429
+    client_selective_rate_limiting.post(
+        "/v2/users/8", json = {"password": "fooy"}
+    )
+
 
 def test_incomplete_authorization_header(client):
     response = client.get("/v2/users/", headers={"Authorization": "random token"})
@@ -405,9 +436,10 @@ def test_different_tier_limits(client_selective_rate_limiting):
     assert response.status_code == 200
     response = client_selective_rate_limiting.get("/v2/users/", headers=headers_2)
     assert response.status_code == 429
+    client_selective_rate_limiting.post(
+        "/v2/users/10", json = {"password": "fooy"}
+    )
+    client_selective_rate_limiting.post(
+        "/v2/users/100", json = {"password": "fooy"}
+    )
     
-
-
-
-
-
