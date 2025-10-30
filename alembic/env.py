@@ -1,5 +1,6 @@
 from user_service.models.user import Base
-#from user_service.models import friend
+from user_service.models import friend # noqa: F401
+from user_service.models import event # noqa: F401
 #ignore this comment
 from logging.config import fileConfig
 
