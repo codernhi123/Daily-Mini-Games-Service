@@ -1,81 +1,259 @@
 from datetime import datetime
 from fastapi import Depends
-from sqlalchemy import String, Integer, select, insert, update, and_, or_, ForeignKey, UniqueConstraint, Index
+from sqlalchemy import String, Integer, select, and_, or_, ForeignKey, UniqueConstraint, Index, delete, CheckConstraint
+from sqlalchemy import DateTime, text
 from sqlalchemy.orm import Mapped, mapped_column, Session
-from sqlalchemy.sql import func
-
 from .user import Base 
-from shared.database import get_db
+from .user import User
+from dotenv import load_dotenv
+load_dotenv()
+#from sqlalchemy import case
+
+#from shared.database import get_db
 
 class FriendRequest(Base):
     __tablename__ = "friend_requests"
     id: Mapped[int] = mapped_column(Integer, primary_key = True, autoincrement = True)
-    requester: Mapped[str] = mapped_column(ForeignKey("users.name", ondelete = "CASCADE"), index = True, nullable = False)
-    receiver: Mapped[str] = mapped_column(ForeignKey("users.name", ondelete = "CASCADE"), index = True, nullable = False)
-    status: Mapped[str] = mapped_column(String, default = "pending", nullable = False)
-    created_at: Mapped[datetime] = mapped_column(server_default = func.now(), nullable = False)
-
+    requester_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    receiver_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    status: Mapped[str] = mapped_column(String, server_default=text("'pending'"), nullable = False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("CURRENT_TIMESTAMP"), nullable = False)
     __table_args__ = (
-        UniqueConstraint("requester", "receiver", name="uq_friend_request_pair"),
-        Index("ix_friend_requests_receiver_status", "receiver", "status"),
+        UniqueConstraint("requester_id", "receiver_id", name="uq_friend_request_pair"),
+        Index("ix_friend_requests_receiver_status", "receiver_id", "status"),
+        
+        CheckConstraint("requester_id <> receiver_id", name="ck_fr_not_self"),
     )
 
 class Friendship(Base):
     __tablename__ = "friendships"
-    user_a: Mapped[str] = mapped_column(ForeignKey("users.name", ondelete="CASCADE"), primary_key = True)
-    user_b: Mapped[str] = mapped_column(ForeignKey("users.name", ondelete="CASCADE"), primary_key = True)
+    user_a_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    user_b_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
 
     __table_args__ = (
-        UniqueConstraint("user_a", "user_b", name="uq_friend_pair"),
+        UniqueConstraint("user_a_id", "user_b_id", name="uq_friend_pair"),
+        CheckConstraint("user_a_id <> user_b_id", name="ck_fs_not_self"),
+        CheckConstraint("user_a_id < user_b_id", name="ck_fs_canonical_order"),
     )
 
 class FriendRepository:
     def __init__(self , session:Session):
         self.session = session
 
-    def _ordered(self, u1: str, u2: str) -> tuple[str, str]:
-        return (u1, u2) if u1 < u2 else (u2, u1)
+    # Helper functions STARTED
+    def _ordered_ids(self, a: int, b: int) -> tuple[int, int]:
+        return (a, b) if a < b else (b, a)
     
-    async def send_request(self, requester:str, receiver:str):
+    def _get_request_by_pair(self, requester_id: int, receiver_id: int):
+        stmt = select(FriendRequest).where(
+            and_(
+                FriendRequest.requester_id == requester_id,
+                FriendRequest.receiver_id == receiver_id,
+            )
+        )
+        return self.session.execute(stmt).scalar_one_or_none()
+
+    def _get_pending_request_either_direction(self, a: int, b: int):
+        # for duplicate prevention
+        stmt = select(FriendRequest.id).where(
+            and_(FriendRequest.status == "pending"),
+            or_(
+                and_(FriendRequest.requester_id == a, FriendRequest.receiver_id == b),
+                and_(FriendRequest.requester_id == b, FriendRequest.receiver_id == a),
+            )
+        )
+        return self.session.execute(stmt).scalar_one_or_none()
+    # ENDED
+
+    async def view_request_incoming(self, user_id: int):
+        stmt = select(FriendRequest).where(
+            and_(FriendRequest.receiver_id == user_id, FriendRequest.status == "pending")
+        )
+        return self.session.scalars(stmt).all()
+    
+    async def view_request_outgoing(self, user_id: int):
+        stmt = select(FriendRequest).where(
+            and_(FriendRequest.requester_id == user_id, FriendRequest.status == "pending")
+        )
+        return self.session.scalars(stmt).all()
+    
+    async def send_request(self, requester_id: int, receiver_id: int):
         try:
-            if receiver == requester:
+            if receiver_id == requester_id:
                 raise ValueError("Cannot make friend with yourself")
             
-            a, b = self._ordered(requester, receiver)
+            a, b = self._ordered_ids(requester_id, receiver_id)
             exists = self.session.get(Friendship, (a, b))
             if exists:
                 raise ValueError("Already been friends")
             
-            new_fr = FriendRequest(requester = requester, receiver = receiver)
+            pending_stmt = self._get_pending_request_either_direction(requester_id, receiver_id)
+            if pending_stmt:
+                raise ValueError("A pending request already exists between these users")
+            
+            new_fr = FriendRequest(requester_id = requester_id, receiver_id = receiver_id, status="pending")
             self.session.add(new_fr)
             self.session.commit()
         except Exception:
             self.session.rollback()
             raise
 
-    async def pending_list(self, user: str):
-        stmt = select(FriendRequest).where(and_(FriendRequest.status == "pending", FriendRequest.receiver == user))
+    async def accept_request(self, acting_user_id: int, requester_id: int):
+        try:
+            fr = self._get_request_by_pair(requester_id, acting_user_id)
+            if not fr or fr.status != "pending" or fr.receiver_id != acting_user_id:
+                raise ValueError("No pending request to accept")
+            
+            a, b = self._ordered_ids(requester_id, acting_user_id)
+            if not self.session.get(Friendship, (a, b)):
+                self.session.add(Friendship(user_a_id=a, user_b_id=b))
+
+            fr.status = "accepted"
+            self.session.commit()
+        except Exception:
+            self.session.rollback()
+            raise
+
+    async def delete_request(self, acting_user_id: int, receiver_id: int):
+        try:
+            fr = self._get_request_by_pair(acting_user_id, receiver_id)
+            if not fr or fr.status != "pending":
+                raise ValueError("No request to cancel")
+            
+            self.session.delete(fr)
+            self.session.commit()
+        except Exception:
+            self.session.rollback()
+            raise
+
+    async def pending_list(self, user_id: int):
+        stmt = select(FriendRequest).where(and_(FriendRequest.status == "pending", FriendRequest.receiver_id == user_id))
         return self.session.scalars(stmt).all()
     
-    async def accept_request(self, request_id: int, user: str):
+    async def list_friends(self, user_id: int) -> list[int]:
+        stmt = select(Friendship).where(or_(Friendship.user_a_id == user_id, Friendship.user_b_id == user_id))
+        fr_status = self.session.scalars(stmt).all()
+        return [x.user_b_id if x.user_a_id == user_id else x.user_a_id for x in fr_status]
+    
+    async def get_friend_by_name(self, user_id: int, friend_name: str) -> str:
+        stmt = (
+            select(User.id)
+            .join(
+                Friendship,
+                or_(
+                    Friendship.user_a_id == User.id,
+                    Friendship.user_b_id == User.id,
+                )
+            )
+            .where(
+                #acting user
+                or_(
+                    Friendship.user_a_id == user_id,
+                    Friendship.user_b_id == user_id,
+                )
+            )
+            .where(User.name == friend_name) # other user’s name matches friend_name
+            .where(User.id != user_id) # don’t accidentally match yourself if same name/id
+        )
+
+        result = self.session.execute(stmt)
+        fr_status =  result.scalar_one_or_none()
+
+        if not fr_status:
+            return f"You and {friend_name} are not friends"
+        else:
+            return f"You and {friend_name} are friends"
+    
+    async def get_friend_by_id(self, user_id: int, friend_id: int) -> str:
+        a, b = self._ordered_ids(user_id, friend_id)
+
+        stmt = select(Friendship).where(
+            and_(Friendship.user_a_id == a, Friendship.user_b_id == b)
+        )
+
+        result = self.session.execute(stmt)
+        fr_status =  result.scalar_one_or_none()
+
+        if not fr_status:
+            return f"You and user with ID: {friend_id} are not friends"
+        else:
+            return f"You and user with ID: {friend_id} are friends"
+        
+    async def delete_friend_by_name(self, user_id: int, friend_name: str):
         try:
-            new_fr = self.session.get(FriendRequest, request_id)
-            if not new_fr or new_fr.status != "pending" or new_fr.receiver!=user:
-                raise ValueError("Cannot friend")
-            a, b = self._ordered(new_fr.requester, new_fr.receiver)
-            self.session.execute(insert(Friendship).values(user_a = a, user_b = b))
+            friend_id_stmt = (
+                select(User.id)
+                .join(
+                    Friendship,
+                    or_(
+                        Friendship.user_a_id == User.id,
+                        Friendship.user_b_id == User.id,
+                    ),
+                )
+                .where(
+                    or_(
+                        Friendship.user_a_id == user_id,
+                        Friendship.user_b_id == user_id,
+                    )
+                )
+                .where(User.name == friend_name)
+                .where(User.id != user_id)
+            )
+
+            friend_id = self.session.execute(friend_id_stmt).scalar_one_or_none()
+            
+            if friend_id is None:
+                raise ValueError(f"No friendship found between {user_id} and {friend_name}")
+
+            a, b = self._ordered_ids(user_id, friend_id)
+            fs = self.session.get(Friendship, (a, b))
+
+            if not fs:
+                raise ValueError("Friendship does not exist to be deleted")
+            
+            self.session.delete(fs)
             self.session.execute(
-                update(FriendRequest).where(FriendRequest.id == request_id).values(status = "accepted")
+                delete(FriendRequest).where(
+                    or_(
+                        and_(FriendRequest.requester_id == a, FriendRequest.receiver_id == b),
+                        and_(FriendRequest.requester_id == b, FriendRequest.receiver_id == a),
+                    )
+                )
+            )
+
+            self.session.commit()
+        except Exception:
+            self.session.rollback()
+            raise
+
+    async def delete_friend_by_id(self, user_id: int, friend_id: int):
+        try:
+            if user_id == friend_id:
+                raise ValueError("Cannot unfriend yourself")
+            
+            a, b = self._ordered_ids(user_id, friend_id)
+            fs = self.session.get(Friendship, (a, b))
+            if not fs:
+                raise ValueError("Friendship does not exist to be deleted")
+            
+            self.session.delete(fs)
+            self.session.execute(
+                delete(FriendRequest).where(
+                    or_(
+                        and_(FriendRequest.requester_id == a, FriendRequest.receiver_id == b),
+                        and_(FriendRequest.requester_id == b, FriendRequest.receiver_id == a),
+                    )
+                )
             )
             self.session.commit()
         except Exception:
             self.session.rollback()
             raise
-    
-    async def list_friends(self, user: str) -> list[str]:
-        stmt = select(Friendship).where(or_(Friendship.user_a == user, Friendship.user_b == user))
-        fr_status = self.session.scalars(stmt).all()
-        return [x.user_b if x.user_a == user else x.user_a for x in fr_status]
 
-def get_friend_repository(db: Session = Depends(get_db)) -> FriendRepository:
+def _get_db_dep():
+    # defer the import so env/engine are ready
+    from shared.database import get_db as real_get_db
+    yield from real_get_db()
+
+def get_friend_repository(db: Session = Depends(_get_db_dep)) -> FriendRepository:
     return FriendRepository(db)
