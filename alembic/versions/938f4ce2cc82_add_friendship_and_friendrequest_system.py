@@ -9,7 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects import postgresql # noqa: F401
 
 # revision identifiers, used by Alembic.
 revision: str = '938f4ce2cc82'
