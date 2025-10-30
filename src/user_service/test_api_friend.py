@@ -5,12 +5,11 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, text
-from user_service.auth.jwt_helper import create_access_token, validate_jwt
-from .models.rate_limiter import check_rate_limiter
 from user_service.auth.jwt_helper import create_access_token
+from .models.rate_limiter import check_rate_limiter
 
 from .models.friend import FriendRepository, get_friend_repository
-from .models.user import Base, UserRepository, get_user_repository, password_hash, password_verification
+from .models.user import Base, UserRepository, get_user_repository, password_hash
 
 from .api import app
 
@@ -128,7 +127,6 @@ def test_create_friend_request_a_to_b(client, user_a_with_auth, user_b):
     assert response_send.json()["ok"] is True
 
 def test_create_friend_request_a_to_b_with_wrong_auth(client, user_a_with_auth, user_b):
-    token_a = user_a_with_auth["token"]
     user_a_id = user_a_with_auth["user"]["id"]
     user_b_id = user_b["id"]
 
