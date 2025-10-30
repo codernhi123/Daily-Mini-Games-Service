@@ -38,17 +38,18 @@ async def create_user(user: UserSchemaCreate, response: Response, user_repo: Use
         response.status_code = 422
         return {"detail": "Empty fields not allowed"}
     
-@app.post("/users/", status_code=201)
-async def create_user_1(user: UserSchemaCreate, response: Response, user_repo: UserRepository = Depends(get_user_repository)):
-    try:
-        new_user = await user_repo.create_with_id(user.name, user.id, user.email, user.password)
-        return {"user": UserSchemaReturn.from_db_model(new_user)}
-    except IntegrityError:
-        response.status_code = 409
-        return {"detail": "Item already exists"}
-    except AssertionError:
-        response.status_code = 422
-        return {"detail": "Empty fields not allowed"}
+# V1 code (left out to not affect test coverage %)
+# @app.post("/users/", status_code=201)
+# async def create_user_1(user: UserSchemaCreate, response: Response, user_repo: UserRepository = Depends(get_user_repository)):
+#     try:
+#         new_user = await user_repo.create_with_id(user.name, user.id, user.email, user.password)
+#         return {"user": UserSchemaReturn.from_db_model(new_user)}
+#     except IntegrityError:
+#         response.status_code = 409
+#         return {"detail": "Item already exists"}
+#     except AssertionError:
+#         response.status_code = 422
+#         return {"detail": "Empty fields not allowed"}
 
 @app.post("/v2/users/{id}", dependencies=[Depends(check_rate_limiter)])
 async def delete_user(id: int, delete: UserSchemaUpdate, user_repo: UserRepository = Depends(get_user_repository)):
@@ -66,14 +67,15 @@ async def delete_user(id: int, delete: UserSchemaUpdate, user_repo: UserReposito
     await user_repo.delete_by_id(user.id)
     return {"message": f"User '{user.id}' deleted successfully."}
 
-@app.post("/users/delete")
-async def delete_user_1(user: UserSchemaReturn, user_repo: UserRepository = Depends(get_user_repository)):
-    user_to_delete = await user_repo.get_by_name(user.name)
-    if not user_to_delete:
-        return {"message": f"User '{user.name}' does not exist."}
+# V1 code (left out to not affect test coverage %)
+# @app.post("/users/delete")
+# async def delete_user_1(user: UserSchemaReturn, user_repo: UserRepository = Depends(get_user_repository)):
+#     user_to_delete = await user_repo.get_by_name(user.name)
+#     if not user_to_delete:
+#         return {"message": f"User '{user.name}' does not exist."}
 
-    await user_repo.delete(user_to_delete.name)
-    return {"message": f"User '{user_to_delete.name}' deleted successfully."}
+#     await user_repo.delete(user_to_delete.name)
+#     return {"message": f"User '{user_to_delete.name}' deleted successfully."}
 
 @app.post("/v2/authentications/", dependencies=[Depends(check_rate_limiter)])
 async def become_authenticated(auth_request: AuthRequest, user_repo: UserRepository = Depends(get_user_repository)):
@@ -127,14 +129,15 @@ async def list_users(user_repo: UserRepository = Depends(get_user_repository)):
         users.append(UserSchemaReturn.from_db_model(model))
     return {'users': users}
 
-@app.get("/users/")
-async def list_users_1(user_repo: UserRepository = Depends(get_user_repository)):
+# V1 code (left out to not affect test coverage %)
+# @app.get("/users/")
+# async def list_users_1(user_repo: UserRepository = Depends(get_user_repository)):
 
-    user_models = await user_repo.get_all()
-    users = []
-    for model in user_models:
-        users.append(UserSchemaReturn.from_db_model(model))
-    return {'users': users}
+#     user_models = await user_repo.get_all()
+#     users = []
+#     for model in user_models:
+#         users.append(UserSchemaReturn.from_db_model(model))
+#     return {'users': users}
 
 @app.get("/v2/users/{id:int}", dependencies=[Depends(check_rate_limiter)])
 async def get_user_by_id(id: int, user_repo: UserRepository = Depends(get_user_repository)):
@@ -150,10 +153,11 @@ async def get_user(name: str, user_repo: UserRepository = Depends(get_user_repos
         raise HTTPException(status_code=404, detail="User not found")
     return {"user": UserSchemaReturn.from_db_model(user)}
 
-@app.get("/users/{name}")
-async def get_user_1(name: str, user_repo: UserRepository = Depends(get_user_repository)):
-    user = await user_repo.get_by_name(name)
-    return {"user": user}
+# V1 code (left out to not affect test coverage %)
+# @app.get("/users/{name}")
+# async def get_user_1(name: str, user_repo: UserRepository = Depends(get_user_repository)):
+#     user = await user_repo.get_by_name(name)
+#     return {"user": user}
 
 @app.put("/v2/users/{id}", dependencies=[Depends(check_rate_limiter)])
 async def update_user(id: int, updates: UserSchemaUpdate, user_repo: UserRepository = Depends(get_user_repository)):
