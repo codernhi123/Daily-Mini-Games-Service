@@ -1,13 +1,11 @@
-from typing import Literal, List, Optional
-from fastapi import Depends, HTTPException, APIRouter, Query, Header
+from typing import Literal
+from fastapi import Depends, HTTPException, APIRouter, Query
 from pydantic import BaseModel
-from sqlalchemy import select, and_, delete, update
-from sqlalchemy.orm import Session
 from .models.rate_limiter import check_rate_limiter
 from user_service.auth.jwt_helper import validate_jwt
 
-from .models.friend import FriendRepository, FriendRequest, Friendship, get_friend_repository
-from .models.user import User, UserRepository, get_user_repository
+from .models.friend import FriendRepository, get_friend_repository
+from .models.user import UserRepository, get_user_repository
 #from shared.database import get_db
 
 router = APIRouter(prefix="/v2/users", tags=["friends"])

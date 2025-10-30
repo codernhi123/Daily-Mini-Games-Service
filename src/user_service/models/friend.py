@@ -1,15 +1,14 @@
 from datetime import datetime
-from dotenv import load_dotenv
-load_dotenv()
 from fastapi import Depends
-from sqlalchemy import String, Integer, select, insert, update, and_, or_, ForeignKey, UniqueConstraint, Index, delete, CheckConstraint
+from sqlalchemy import String, Integer, select, and_, or_, ForeignKey, UniqueConstraint, Index, delete, CheckConstraint
 from sqlalchemy import DateTime, text
 from sqlalchemy.orm import Mapped, mapped_column, Session
-from sqlalchemy.sql import func
-#from sqlalchemy import case
-
 from .user import Base 
 from .user import User
+from dotenv import load_dotenv
+load_dotenv()
+#from sqlalchemy import case
+
 #from shared.database import get_db
 
 class FriendRequest(Base):
