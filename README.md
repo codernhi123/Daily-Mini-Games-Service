@@ -24,8 +24,11 @@ To get a live deployment that you can edit follow these steps.
 
 ```
 POSTGRES_HOST=db
-POSTGRES_USER=<some shared username>
-POSTGRES_PASSWORD=<some shared password>
+POSTGRES_USER=Group14
+POSTGRES_PASSWORD=Group14
+POSTGRES_DB=Group14
+ADMIN_PASSWORD=sharedpassword123
+STORAGE_SECRET=61ff492251e416bc484e98edc564af81e813e27fa8b8285fcff8618abfa42eb4
 ```
 
 2. Launch the application by running:
@@ -55,7 +58,7 @@ $ docker system prune --volumes
 
 * You can run tests as follows:
 ```
-$ docker compose exec web pytest
+$ docker compose exec -e TESTING=1 web pytest
 ```
 
 ## Relevant documentation
