@@ -89,7 +89,7 @@ def test_created_20000_users(client, created_20000_users):
     
 def test_read_users(client, created_user, created_user2):
     users = [created_user, created_user2]
-    response = client.get("/all_users/")
+    response = client.get("/users/")
     assert response.status_code == 200
     assert response.json() == {
         'users': users
@@ -155,4 +155,70 @@ def test_deleting_user_fail(client):
     assert response.status_code == 200
     assert response.json() == {"message": f"User '{nameToDelete}' does not exist."}
 
-#testing the testing pipeline 
+def test_multiple_users(client):
+    users = [
+        {"name": "Jam", "id": 151, "email": "jam@gmail.com", "password": "jam"},
+        {"name": "Mam", "id": 152, "email": "mam@gmail.com", "password": "mam"},
+        {"name": "Lam", "id": 153, "email": "lam@gmail.com", "password": "lam"}
+    ]
+
+    for user in users:
+        response = client.post("/users/", json=user)
+        assert response.status_code == 201
+        assert response.json() == {"user": user}
+
+    response = client.get("/users/")
+    assert response.status_code == 200
+    assert len(response.json()["users"]) >= 3
+
+def test_duplicate_name(client):
+    user_1 = {"name": "Jam", "id": 151, "email": "jam@gmail.com", "password": "jam"}
+    user_2 = {"name": "Jam", "id": 152, "email": "mam@gmail.com", "password": "mam"}
+
+    response_1 = client.post("/users/", json=user_1)
+    assert response_1.status_code == 201
+
+    response_2 = client.post("/users/", json=user_2)
+    assert response_2.status_code == 409
+    assert response_2.json() == {"detail": "Item already exists"}
+
+def test_duplicate_email(client):
+    user_1 = {"name": "Jam", "id": 151, "email": "jam@gmail.com", "password": "jam"}
+    user_2 = {"name": "Mam", "id": 152, "email": "jam@gmail.com", "password": "mam"}
+
+    response_1 = client.post("/users/", json=user_1)
+    assert response_1.status_code == 201
+
+    response_2 = client.post("/users/", json=user_2)
+    assert response_2.status_code == 409
+    assert response_2.json() == {"detail": "Item already exists"}
+
+def test_duplicate_id(client):
+    user_1 = {"name": "Jam", "id": 151, "email": "jam@gmail.com", "password": "jam"}
+    user_2 = {"name": "Mam", "id": 151, "email": "mam@gmail.com", "password": "mam"}
+
+    response_1 = client.post("/users/", json=user_1)
+    assert response_1.status_code == 201
+
+    response_2 = client.post("/users/", json=user_2)
+    assert response_2.status_code == 409
+    assert response_2.json() == {"detail": "Item already exists"}
+
+def test_get_users_by_different_names(client):
+    users = [
+        {"name": "Bam", "id": 154, "email": "bam@gmail.com", "password": "bam"},
+        {"name": "Fam", "id": 155, "email": "fam@gmail.com", "password": "fam"}
+    ]
+
+    for user in users:
+        client.post("/users/", json=user)
+
+    for user in users: 
+        response = client.get(f"/users/{user['name']}")
+        assert response.status_code == 200
+        assert response.json() == {"user": user}
+        
+
+
+
+
