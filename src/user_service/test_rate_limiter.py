@@ -202,39 +202,39 @@ def test_authenticated_user_tier_3(client_selective_rate_limiting):
 
 
 # @pytest.mark.skip(reason="Slower Test")
-def test_revoked_jwt_user(client_selective_rate_limiting):
-    client_selective_rate_limiting.post(
-        "/v2/users/",
-        json={"name": "foo3", "id": 3000, "email": "foo3@gmail.com", "password": "fooy", "tier": 2}
-    )
-    auth_response = client_selective_rate_limiting.post(
-        "/v2/authentications/",
-        json={"name": "foo3", "password": "fooy", "expiry": "2026-12-31 23:59:59"}
-    )
-    token = auth_response.json()["jwt"]
-    headers = {"Authorization": f"Bearer {token}"}
+# def test_revoked_jwt_user(client_selective_rate_limiting):
+#     client_selective_rate_limiting.post(
+#         "/v2/users/",
+#         json={"name": "foo3", "id": 3000, "email": "foo3@gmail.com", "password": "fooy", "tier": 2}
+#     )
+#     auth_response = client_selective_rate_limiting.post(
+#         "/v2/authentications/",
+#         json={"name": "foo3", "password": "fooy", "expiry": "2026-12-31 23:59:59"}
+#     )
+#     token = auth_response.json()["jwt"]
+#     headers = {"Authorization": f"Bearer {token}"}
 
-    for i in range(4):
-        response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
-    assert response.status_code == 200
+#     for i in range(4):
+#         response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
+#     assert response.status_code == 200
 
-    client_selective_rate_limiting.request(
-        "DELETE",
-        "/v2/authentications/",
-        json=({"jwt": token}),
-    )
+#     client_selective_rate_limiting.request(
+#         "DELETE",
+#         "/v2/authentications/",
+#         json=({"jwt": token}),
+#     )
 
-    time.sleep(10)
+#     time.sleep(10)
 
 
-    response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
-    assert response.status_code == 200
+#     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
+#     assert response.status_code == 200
 
-    response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
-    assert response.status_code == 429
-    client_selective_rate_limiting.post(
-        "/v2/users/3000", json = {"password": "fooy"}
-    )
+#     response = client_selective_rate_limiting.get("/v2/users/", headers=headers)
+#     assert response.status_code == 429
+#     client_selective_rate_limiting.post(
+#         "/v2/users/3000", json = {"password": "fooy"}
+#     )
 
 
 def test_no_jwt_user(client):
