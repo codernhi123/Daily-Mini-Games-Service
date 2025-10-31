@@ -133,7 +133,7 @@ async def list_users(user_repo: UserRepository = Depends(get_user_repository)):
     return {'users': users}
 
 # V1 code (left out to not affect test coverage %)
-@app.get("/all_users/")
+@app.get("/users/")
 async def list_users_1(user_repo: UserRepository_v1 = Depends(get_user_repository_v1)):
 
     user_models = await user_repo.get_all()
