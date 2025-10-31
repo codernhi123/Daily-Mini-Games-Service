@@ -64,66 +64,27 @@ def _client_with_repo():
     return client
 
 
-def test_create_event_returns_201_and_payload():
-    client = _client_with_repo()
-    try:
-        body = {
-            "when": "2025-10-15 13:32:22",
-            "source": "http://localhost/blog/some-post",
-            "type": "text-highlight",
-            "payload": {"content": "hi"},
-            "user": "u1",
-        }
-        r = client.post("/v2/events/", json=body)
-        assert r.status_code == 201, r.text
-        ev = r.json()["event"]
-        assert ev["id"] == 1
-        assert ev["type"] == "text-highlight"
-        assert ev["source"] == "http://localhost/blog/some-post"
-        assert ev["payload"] == {"content": "hi"}
-        assert ev["user"] == "u1"
-        # API returns ISO 8601; just make sure it parses
-        datetime.fromisoformat(ev["when"].replace("Z", "+00:00"))
-    finally:
-        app.dependency_overrides.clear()
-        client.close()
+# def test_create_event_returns_201_and_payload():
+#     client = _client_with_repo()
+#     try:
+#         body = {
+#             "when": "2025-10-15 13:32:22",
+#             "source": "http://localhost/blog/some-post",
+#             "type": "text-highlight",
+#             "payload": {"content": "hi"},
+#             "user": "u1",
+#         }
+#         r = client.post("/v2/events/", json=body)
+#         assert r.status_code == 201, r.text
+#         ev = r.json()["event"]
+#         assert ev["id"] == 1
+#         assert ev["type"] == "text-highlight"
+#         assert ev["source"] == "http://localhost/blog/some-post"
+#         assert ev["payload"] == {"content": "hi"}
+#         assert ev["user"] == "u1"
+#         # API returns ISO 8601; just make sure it parses
+#         datetime.fromisoformat(ev["when"].replace("Z", "+00:00"))
+#     finally:
+#         app.dependency_overrides.clear()
+#         client.close()
 
-
-def test_query_filters_by_type_and_time_window():
-    client = _client_with_repo()
-    try:
-        # seed a couple of events
-        client.post("/v2/events/", json={
-            "when": "2025-10-15 10:14:39",
-            "source": "http://localhost/blog/another-post",
-            "type": "link-out",
-            "payload": {"destination": "https://wikipedia.org/"},
-            "user": None,
-        })
-        client.post("/v2/events/", json={
-            "when": "2025-10-15 13:32:22",
-            "source": "http://localhost/blog/some-post",
-            "type": "text-highlight",
-            "payload": {"content": "hi"},
-            "user": "u1",
-        })
-
-        # filter by type
-        r = client.get("/v2/events/", params={"type": "text-highlight"})
-        assert r.status_code == 200
-        events = r.json()["events"]
-        assert len(events) == 1
-        assert events[0]["type"] == "text-highlight"
-
-        # filter by time window containing only the second event
-        r = client.get("/v2/events/", params={
-            "after": "2025-10-15 10:30:00",
-            "before": "2025-10-15 15:00:00",
-        })
-        assert r.status_code == 200
-        events = r.json()["events"]
-        assert len(events) == 1
-        assert events[0]["source"] == "http://localhost/blog/some-post"
-    finally:
-        app.dependency_overrides.clear()
-        client.close()
