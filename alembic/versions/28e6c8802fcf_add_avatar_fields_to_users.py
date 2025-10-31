@@ -1,7 +1,7 @@
 """add avatar fields to users
 
 Revision ID: 28e6c8802fcf
-Revises: 938f4ce2cc82
+Revises: 60508625bbf7
 Create Date: 2025-10-31 02:10:00
 """
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "28e6c8802fcf"
-down_revision = "938f4ce2cc82"  # replace this with your last revision’s ID
+down_revision = "60508625bbf7"  # replace this with your last revision’s ID
 branch_labels = None
 depends_on = None
 
