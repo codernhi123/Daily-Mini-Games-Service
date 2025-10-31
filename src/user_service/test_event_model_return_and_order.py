@@ -1,13 +1,12 @@
 # src/user_service/test_event_model_return_and_order.py
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from user_service.models.event import (
     EventSchemaCreate,
     EventSchemaReturn,
     EventQuery,
     EventRepository,
-    get_event_repository,
 )
 from shared.database import get_db
 

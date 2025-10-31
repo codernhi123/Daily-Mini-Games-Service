@@ -179,15 +179,8 @@ async def list_users(user_repo: UserRepository = Depends(get_user_repository)):
 
 
 # V1 code (left out to not affect test coverage %)
-<<<<<<< HEAD
 @app.get("/users/")
 async def list_users_1(user_repo: UserRepository_v1 = Depends(get_user_repository_v1)):
-=======
-@app.get("/all_users/")
-async def list_users_1(
-    user_repo: UserRepository_v1 = Depends(get_user_repository_v1),
-):
->>>>>>> f34e8df (Fix event time window filtering and test pass for test_query_filters_by_type_and_time_window)
 
     user_models = await user_repo.get_all()
     users = []
