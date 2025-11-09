@@ -1,0 +1,224 @@
+import pytest
+import time
+
+from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
+from sqlalchemy import create_engine, text
+
+from .models.user_v1 import Base_v1, UserRepository_v1, get_user_repository_v1
+
+from .api import app
+
+@pytest.fixture(scope='function')
+def engine():
+    engine = create_engine("sqlite:///:memory:?check_same_thread=False")
+    Base_v1.metadata.create_all(bind=engine)
+    yield engine
+
+@pytest.fixture(scope='function')
+def session(engine):
+    conn = engine.connect()
+    conn.begin()
+    db = Session(bind=conn)
+    yield db
+    db.rollback()
+    conn.close()
+
+@pytest.fixture(scope='function')
+def repo(session):
+    yield UserRepository_v1(session)
+
+@pytest.fixture(scope='function')
+def client(repo):
+    app.dependency_overrides[get_user_repository_v1] = lambda: repo
+    with TestClient(app) as c:
+        yield c
+
+@pytest.fixture(scope='function')
+def created_user(session):
+    user_data = {"name": "foo", "id": 1, "email": "foo@gmail.com", "password": "fooy"}
+    try:
+        session.execute(text("INSERT INTO users_v1 (name, id, email, password) VALUES (:name, :id, :email, :password)"), user_data)
+        session.commit()
+    except IntegrityError as e:
+        print("IntegrityError:", e)
+        session.rollback()
+    except OperationalError as e:
+        print("OperationalError:", e)
+        session.rollback()
+    except SQLAlchemyError as e:
+        print("SqlAlchemyError:", e)
+        session.rollback()
+    return user_data
+
+@pytest.fixture(scope='function')
+def created_user2(session):
+    user_data2 = {"name": "foob", "id": 2, "email": "foob@gmail.com", "password": "fooby"}
+    try:
+        session.execute(text("INSERT INTO users_v1 (name, id, email, password) VALUES (:name, :id, :email, :password)"), user_data2)
+        session.commit()
+    except IntegrityError as e:
+        print("IntegrityError:", e)
+        session.rollback()
+    except OperationalError as e:
+        print("OperationalError:", e)
+        session.rollback()
+    except SQLAlchemyError as e:
+        print("SqlAlchemyError:", e)
+        session.rollback()
+    return user_data2
+
+@pytest.fixture(scope='function')
+def created_20000_users(client):
+    user = []
+    for i in range(20000):
+        client.post("/users/", json = {"name": f"user{i}", "id": i, "email": f"user{i}@email.com", "password": f"passord{i}"})
+        user.append({"name": f"user{i}", "id": i, "email": f"user{i}@email.com", "password": f"passord{i}"})
+    return user
+
+def test_created_20000_users(client, created_20000_users):
+    start_time = time.time() 
+    response = client.get("/users/user5000")
+    end_time = time.time()
+    time_elapsed = end_time - start_time
+    print(time_elapsed)
+    assert response.status_code == 200
+    assert response.json() == {"user": {"name": "user5000", "id": 5000, "email": "user5000@email.com", "password": "passord5000"}}
+    assert time_elapsed < 0.127
+    
+def test_read_users(client, created_user, created_user2):
+    users = [created_user, created_user2]
+    response = client.get("/users/")
+    assert response.status_code == 200
+    assert response.json() == {
+        'users': users
+    }
+
+def test_read_user(client, created_user):
+    response = client.get("/users/foo")
+    assert response.status_code == 200
+    assert response.json() == {
+        "user": created_user
+    }
+
+def test_create_user(client):
+    response = client.post(
+        "/users/",
+        json={"name": "bbb", "id": 100, "email": "bbb@gmail.com", "password": "bbb"}
+    )
+    assert response.status_code == 201
+    assert response.json() == {
+        "user": {"name": "bbb", "id": 100, "email": "bbb@gmail.com", "password": "bbb"}
+    }
+
+def test_create_existing_user(client, created_user):
+    response = client.post(
+        "/users/",
+        json=created_user,
+    )
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Item already exists"}
+
+def test_empty_field(client, created_user):
+    response = client.post(
+        "/users/",
+        json={"name": "sss", "id": "", "email": "", "password": ""}
+    )
+    assert response.status_code == 422
+
+def test_nonexisting_user(client, created_user):
+    response = client.get("/users/nonexistent")
+    assert response.status_code == 200
+
+def test_deleting_user(client):
+    name = "Jack"
+    response = client.post(
+        "/users/",
+        json={"name": name, "id": 100, "email": "jack@gmail.com", "password": "jackjack"}
+    )
+    assert response.status_code == 201
+    
+    response = client.post("/users/delete", json = {"name": name, "id": 100, "email": "jack@gmail.com", "password": "jackjack"})
+    assert response.status_code == 200
+    assert response.json() == {"message": f"User '{name}' deleted successfully."}
+
+def test_deleting_user_fail(client):
+    nameToDelete = "Jack"
+    response = client.post(
+        "/users/",
+        json={"name": "Sam", "id": 100, "email": "jack@gmail.com", "password": "jackjack"}
+    )
+    assert response.status_code == 201
+    
+    response = client.post("/users/delete", json = {"name": nameToDelete, "id": 100, "email": "jack@gmail.com", "password": "jackjack"})
+    assert response.status_code == 200
+    assert response.json() == {"message": f"User '{nameToDelete}' does not exist."}
+
+def test_multiple_users(client):
+    users = [
+        {"name": "Jam", "id": 151, "email": "jam@gmail.com", "password": "jam"},
+        {"name": "Mam", "id": 152, "email": "mam@gmail.com", "password": "mam"},
+        {"name": "Lam", "id": 153, "email": "lam@gmail.com", "password": "lam"}
+    ]
+
+    for user in users:
+        response = client.post("/users/", json=user)
+        assert response.status_code == 201
+        assert response.json() == {"user": user}
+
+    response = client.get("/users/")
+    assert response.status_code == 200
+    assert len(response.json()["users"]) >= 3
+
+def test_duplicate_name(client):
+    user_1 = {"name": "Jam", "id": 151, "email": "jam@gmail.com", "password": "jam"}
+    user_2 = {"name": "Jam", "id": 152, "email": "mam@gmail.com", "password": "mam"}
+
+    response_1 = client.post("/users/", json=user_1)
+    assert response_1.status_code == 201
+
+    response_2 = client.post("/users/", json=user_2)
+    assert response_2.status_code == 409
+    assert response_2.json() == {"detail": "Item already exists"}
+
+def test_duplicate_email(client):
+    user_1 = {"name": "Jam", "id": 151, "email": "jam@gmail.com", "password": "jam"}
+    user_2 = {"name": "Mam", "id": 152, "email": "jam@gmail.com", "password": "mam"}
+
+    response_1 = client.post("/users/", json=user_1)
+    assert response_1.status_code == 201
+
+    response_2 = client.post("/users/", json=user_2)
+    assert response_2.status_code == 409
+    assert response_2.json() == {"detail": "Item already exists"}
+
+def test_duplicate_id(client):
+    user_1 = {"name": "Jam", "id": 151, "email": "jam@gmail.com", "password": "jam"}
+    user_2 = {"name": "Mam", "id": 151, "email": "mam@gmail.com", "password": "mam"}
+
+    response_1 = client.post("/users/", json=user_1)
+    assert response_1.status_code == 201
+
+    response_2 = client.post("/users/", json=user_2)
+    assert response_2.status_code == 409
+    assert response_2.json() == {"detail": "Item already exists"}
+
+def test_get_users_by_different_names(client):
+    users = [
+        {"name": "Bam", "id": 154, "email": "bam@gmail.com", "password": "bam"},
+        {"name": "Fam", "id": 155, "email": "fam@gmail.com", "password": "fam"}
+    ]
+
+    for user in users:
+        client.post("/users/", json=user)
+
+    for user in users: 
+        response = client.get(f"/users/{user['name']}")
+        assert response.status_code == 200
+        assert response.json() == {"user": user}
+        
+
+
+
+

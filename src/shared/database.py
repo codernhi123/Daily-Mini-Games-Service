@@ -11,10 +11,6 @@ _SessionLocal = None
 
 def _resolve_database_url() -> str:
     """Support DATABASE_URL, DATABASE_* or POSTGRES_*; else use shared in-memory SQLite."""
-
-    #isolate DB when testing
-    if os.environ.get("TESTING") == "1" or "PYTEST_CURRENT_TEST" in os.environ:
-        return "sqlite+pysqlite:///:memory:"
     
     url = os.environ.get("DATABASE_URL")
     if url:
@@ -47,7 +43,9 @@ def _ensure_sqlite_schema(engine):
     from user_service.models.user import Base  # Base includes all models via imports
     # Make sure the Event model module is imported so its table is registered on Base
     import user_service.models.event  # noqa: F401
+    from user_service.models.user_v1 import Base_v1 
     Base.metadata.create_all(bind=engine)
+    Base_v1.metadata.create_all(bind=engine)
 
 
 def get_db():

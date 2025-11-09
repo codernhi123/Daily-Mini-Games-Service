@@ -58,7 +58,7 @@ $ docker system prune --volumes
 
 * You can run tests as follows:
 ```
-$ docker compose exec -e TESTING=1 web pytest
+$ docker compose exec web pytest
 ```
 
 ## Relevant documentation

@@ -1,5 +1,6 @@
+from datetime import datetime
 from pydantic import BaseModel, field_validator
-from sqlalchemy import select, insert, delete, String, Integer, Sequence
+from sqlalchemy import select, insert, delete, String, Integer, Sequence, Boolean, DateTime
 from sqlalchemy.orm import declarative_base, Session, mapped_column, Mapped
 from fastapi import Depends
 from passlib.context import CryptContext
@@ -19,6 +20,8 @@ class User(Base):
     password: Mapped[str] = mapped_column(String(255), nullable=False) #maybe hash later, here or in API
     tier: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     active_jwt: Mapped[str | None] = mapped_column(String, nullable=True)
+    has_avatar: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="0")
+    avatar_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 hashed_crypt = CryptContext(schemes=["bcrypt"], deprecated = "auto")
 
@@ -231,4 +234,6 @@ class AuthResponse(BaseModel):
 class DeauthRequest(BaseModel):
     jwt: str
         
-    
+class DeleteAvatarAuth(BaseModel):
+    password: Optional[str] = None
+    jwt: Optional[str] = None    

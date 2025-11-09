@@ -7,9 +7,7 @@ from .user import Base
 from .user import User
 from dotenv import load_dotenv
 load_dotenv()
-#from sqlalchemy import case
 
-#from shared.database import get_db
 
 class FriendRequest(Base):
     __tablename__ = "friend_requests"

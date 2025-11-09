@@ -6,7 +6,6 @@ from user_service.auth.jwt_helper import validate_jwt
 
 from .models.friend import FriendRepository, get_friend_repository
 from .models.user import UserRepository, get_user_repository
-#from shared.database import get_db
 
 router = APIRouter(prefix="/v2/users", tags=["friends"])
 
@@ -14,7 +13,7 @@ class SendRequestBody(BaseModel):
     other: int
 
 async def require_auth_user(
-    user_id: int,  # FastAPI injects the path param
+    user_id: int,
     token: str,
     user_repo: UserRepository = Depends(get_user_repository),
 ) -> int:
@@ -45,7 +44,7 @@ async def require_auth_user(
 
     return sub_id
 
-@router.get("/{user_id}/friend-requests/", dependencies=[Depends(check_rate_limiter)]) #Get unanswered requests made to/by a user
+@router.get("/{user_id}/friend-requests/", status_code=200, dependencies=[Depends(check_rate_limiter)]) #Get unanswered requests made to/by a user
 async def list_friend_requests(
     user_id: int,
     q: Literal["incoming", "outgoing"] = Query(...),
@@ -64,13 +63,12 @@ async def list_friend_requests(
         for fr in rows
     ]
 
-@router.post("/{user_id}/friend-requests/", dependencies=[Depends(check_rate_limiter)]) #Create a request
+@router.post("/{user_id}/friend-requests/", status_code=201, dependencies=[Depends(check_rate_limiter)]) #Create a request
 async def create_friend_request(
     user_id: int,
     body: SendRequestBody,
     _auth_user_id: int = Depends(require_auth_user),
     repo: FriendRepository = Depends(get_friend_repository),
-    #session: Session = Depends(get_db),
 ):
     requester_id = user_id
     receiver_id = body.other
@@ -80,13 +78,12 @@ async def create_friend_request(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.put("/{user_id}/friend-requests/{other_id}", dependencies=[Depends(check_rate_limiter)]) #Update a request
+@router.put("/{user_id}/friend-requests/{other_id}/", dependencies=[Depends(check_rate_limiter)]) #Update a request
 async def update_request_as_requestee(
     user_id: int,
     other_id: int,
     _auth_user_id: int = Depends(require_auth_user),
     repo: FriendRepository = Depends(get_friend_repository),
-    #session: Session = Depends(get_db)
 ):
     try:
         await repo.accept_request(user_id, other_id)
@@ -94,13 +91,12 @@ async def update_request_as_requestee(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-@router.delete("/{user_id}/friend-requests/{other_id}", dependencies=[Depends(check_rate_limiter)]) #Delete a request
+@router.delete("/{user_id}/friend-requests/{other_id}/", dependencies=[Depends(check_rate_limiter)]) #Delete a request
 async def delete_request_as_requester(
     user_id: int,
     other_id: int,
     _auth_user_id: int = Depends(require_auth_user),
     repo: FriendRepository = Depends(get_friend_repository),
-    #session: Session = Depends(get_db)
 ):
     try:
         await repo.delete_request(user_id, other_id)
@@ -110,14 +106,11 @@ async def delete_request_as_requester(
 
 # Finished friend request, now switch to friendship
 
-@router.get("/{user_id}/friends/", dependencies=[Depends(check_rate_limiter)]) #View friend list
+@router.get("/{user_id}/friends", dependencies=[Depends(check_rate_limiter)]) #View friend list
 async def list_friend(
     user_id: int,
     repo: FriendRepository = Depends(get_friend_repository),
-    #session: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)  # when you wire auth
 ):
-    # assert current_user.name == user_id  # no auth needed for this function
     try:
         rows = await repo.list_friends(user_id)
         return rows
@@ -125,7 +118,7 @@ async def list_friend(
         raise HTTPException(status_code=400, detail=str(e))
     
 @router.get("/{user_id}/friends/{friend_id_or_name}", dependencies=[Depends(check_rate_limiter)]) #Get friend by name/id
-async def get_friend_by_key(
+async def get_friend_by_id_or_name(
     user_id: int,
     friend_id_or_name: str,  # could be name or id
     repo: FriendRepository = Depends(get_friend_repository),

@@ -4,6 +4,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.8.22 /uv /uvx /bin/
 COPY . /app
 WORKDIR /app
 RUN pip install -e .
+RUN pip install --no-cache-dir pillow alembic
 
 ENTRYPOINT ["./scripts/docker-entrypoint.sh"]
 CMD ["uvicorn", "user_service.api:app", "--host", "0.0.0.0", "--port", "8000"]

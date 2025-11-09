@@ -1,11 +1,12 @@
 import pytest
-# import time
+import time
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
 from sqlalchemy import create_engine, text
 from .models.rate_limiter import check_rate_limiter
+from unittest.mock import AsyncMock, patch
 
 from .models.user import Base, UserRepository, get_user_repository, password_hash, password_verification
 
@@ -80,28 +81,48 @@ def created_user2(session):
         session.rollback()
     return {"name": "foob", "id": 2, "email": "foob@gmail.com", "tier": 2}
 
-# @pytest.mark.skip(reason="Slower Test")
-# @pytest.fixture(scope='function')
-# def created_20000_users(client):
-#     user = []
-#     for i in range(20000):
-#         client.post("/v2/users/", json = {"name": f"user{i}", "id": i, "email": f"user{i}@email.com", "password": f"password{i}"})
-#         user.append({"name": f"user{i}", "id": i, "email": f"user{i}@email.com", "password": f"password{i}"})
-#     return user
+@pytest.fixture(scope='function')
+def mock_20000_user_creation():
+    users = [ 
+        {"name": f"user{i}", "id": i, "email": f"user{i}@email.com", "password": f"password{i}", "tier": 1}
+        for i in range(20000)
+    ]
+    return users
 
-# @pytest.mark.skip(reason="Slower Test")
-# def test_created_20000_users(client, created_20000_users):
-#     start_time = time.time() 
-#     response = client.get("/v2/users/user5000")
-#     end_time = time.time()
-#     time_elapsed = end_time - start_time
-#     print(time_elapsed)
-#     assert response.status_code == 200
-#     assert response.json() == {"user": {"name": f"user5000", "id": 5000, "email": "user5000@email.com"}}
-#     assert time_elapsed < 0.127
+def test_get_user_in_20000_users_by_name(client, mock_20000_user_creation):
+    mocked_user = type('User', (), {
+        "name": "user5000", "id": 5000, "email": "user5000@email.com", "password": "password5000", "tier": 1
+    })()
 
+    with patch ('user_service.api.UserRepository.get_by_name', new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = mocked_user
+        start_time = time.time() 
+        response = client.get("/v2/users/user5000")
+        end_time = time.time()
 
-    
+        time_elapsed = end_time - start_time
+        print(time_elapsed)
+        assert response.status_code == 200
+        assert response.json() == {"user": {"name": "user5000", "id": 5000, "email": "user5000@email.com", "tier": 1}}
+        assert time_elapsed < 0.127
+
+def test_get_user_in_20000_users_by_id(client, mock_20000_user_creation):
+    mocked_user = type('User', (), {
+        "name": "user5000", "id": 5000, "email": "user5000@email.com", "password": "password5000", "tier": 1
+    })()
+
+    with patch ('user_service.api.UserRepository.get_by_id', new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = mocked_user
+        start_time = time.time() 
+        response = client.get("/v2/users/5000")
+        end_time = time.time()
+
+        time_elapsed = end_time - start_time
+        print(time_elapsed)
+        assert response.status_code == 200
+        assert response.json() == {"user": {"name": "user5000", "id": 5000, "email": "user5000@email.com", "tier": 1}}
+        assert time_elapsed < 0.127
+
 def test_read_users(client, created_user, created_user2):
     users = [created_user, created_user2]
     response = client.get("/v2/users/")
