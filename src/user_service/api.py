@@ -11,6 +11,7 @@ from .models.user_v1 import (
 from .analytics import build_sessions_for_day, summarize_day, average_reports
 #from typing import List
 from fastapi import FastAPI, Depends, Response, HTTPException # noqa: F401
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session # noqa: F401
 from sqlalchemy.exc import IntegrityError
 # from pydantic import TypeAdapter
@@ -20,14 +21,22 @@ from user_service.auth.jwt_helper import create_access_token, validate_jwt
 from .models.user import UserRepository, AuthRequest, AuthResponse, DeauthRequest, UserSchemaCreate, UserSchemaReturn, UserSchemaUpdate, get_user_repository, password_verification
 from .models.rate_limiter import check_rate_limiter
 from .friend_api import router as friends_router
+from .memory_game_api import router as memory_router
 from dotenv import load_dotenv
 from admin import main # noqa: F401
 load_dotenv()
 
 logger = logging.getLogger('uvicorn.error')
 app = FastAPI()
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(friends_router)
+app.include_router(memory_router)
 
 @app.post("/v2/users/", status_code=201, dependencies=[Depends(check_rate_limiter)])
 async def create_user(user: UserSchemaCreate, response: Response, user_repo: UserRepository = Depends(get_user_repository)):
@@ -261,8 +270,9 @@ async def analytics(
     target = parse_day(on) if on else datetime.now().date()
     return await day_report(target)
 
-ui.run_with(app,
-            mount_path="/admin",
-            favicon="👤",
-            title="User Admin",
-            storage_secret=os.getenv('STORAGE_SECRET'))
+if __name__ in {"__main__", "__mp_main__"}:
+    ui.run_with(app,
+                mount_path="/admin",
+                favicon="👤",
+                title="User Admin",
+                storage_secret=os.getenv('STORAGE_SECRET'))
