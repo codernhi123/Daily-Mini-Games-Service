@@ -10,8 +10,9 @@ from .models.user_v1 import (
 )
 from .analytics import build_sessions_for_day, summarize_day, average_reports
 #from typing import List
-from fastapi import FastAPI, Depends, Response, HTTPException  # noqa: F401
-from sqlalchemy.orm import Session  # noqa: F401
+from fastapi import FastAPI, Depends, Response, HTTPException # noqa: F401
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session # noqa: F401
 from sqlalchemy.exc import IntegrityError
 # from pydantic import TypeAdapter
 import logging
@@ -30,6 +31,7 @@ from .models.user import (
 )
 from .models.rate_limiter import check_rate_limiter
 from .friend_api import router as friends_router
+from .memory_game_api import router as memory_router
 from .models.avatar_router import router as avatar_router
 from dotenv import load_dotenv
 from admin import main  # noqa: F401
@@ -38,8 +40,15 @@ load_dotenv()
 
 logger = logging.getLogger('uvicorn.error')
 app = FastAPI()
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(friends_router)
+app.include_router(memory_router)
 app.include_router(avatar_router)
 
 
