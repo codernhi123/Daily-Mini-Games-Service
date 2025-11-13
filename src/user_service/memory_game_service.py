@@ -1,5 +1,3 @@
-import subprocess
-import json
 import random
 import uuid
 from datetime import datetime, timezone, timedelta, date
@@ -21,7 +19,7 @@ class MemoryGameService:
         1: ["bread", "burger"],
         2: ["coffee", "eggs"],
         3: ["child", "dog"],
-        4: ["door", "tipi",],
+        4: ["door", "tipi"],
         5: ["salt"],
         6: ["fish"]
     }
@@ -79,6 +77,11 @@ class MemoryGameService:
         target_image = random.choice(todays_images)
         correct_image_count = 0
 
+        canvas_width = 800
+        canvas_height = 800
+        image_size = 120
+
+
         for i in range(configuration["count"]):
             if random.random() < 0.40:
                 filename = target_image
@@ -88,27 +91,33 @@ class MemoryGameService:
                 if filename == target_image:
                     correct_image_count += 1
 
-            image_data = {"filename": f"{filename}.png"}
+            x = random.randint(0, canvas_width - image_size)
+            y = random.randint(0, canvas_height - image_size)
+
+            image_data = {
+                "filename": f"{filename}.png",
+                "x": x,
+                "y": y,
+                "size": image_size
+            }
 
             if configuration["recolor"]:
-                image_data["recolor"] = [
-                    random.randint(50, 255),
-                    random.randint(50, 255),
-                    random.randint(50, 255)
-                ]
-
+                image_data["color"] = f"rgb({random.randint(50, 255)}, {random.randint(50, 255)}, {random.randint(50, 255)})"
+        
             if configuration["mirror"] and random.random() < 0.50:
                 image_data["mirror"] = True
 
             if configuration["minify"] and random.random() < 0.50:
-                image_data["minify"] = True
+                image_data["size"] = int(image_size * random.uniform(0.5, 0.7))
 
             images.append(image_data)
 
         return {
             "images": images,
             "target": target_image,
-            "correct_answer": correct_image_count
+            "correct_answer": correct_image_count,
+            "canvas_width": canvas_width,
+            "canvas_height": canvas_height
         }
     
     async def can_play_today(self, id: int) -> Dict[str, Any]:
@@ -153,35 +162,24 @@ class MemoryGameService:
         }
     
     async def display_and_get_question(self, session_id: str) -> Dict[str, Any]:
+        print(f"🔍 Looking for session_id: {session_id}")
+        print(f"🔍 Active sessions: {list(self.active_sessions.keys())}")
         if session_id not in self.active_sessions:
-            raise ValueError("Invalid session Id")
+            raise ValueError("Invalid session ID")
         
         session = self.active_sessions[session_id]
         level_data = session["current_level_data"]
         level = session["level"]
 
-        level_data_json = json.dumps(level_data)
-
-        try: 
-            result = subprocess.run(
-                ["python", "display_images.py", level_data_json],
-                timeout = 10,
-                capture_output = True,
-                text = True
-            )
-        
-            if result.returncode != 0:
-                raise Exception(f"Display failed: {result.stderr}")
-        
-        except subprocess.TimeoutExpired:
-            raise Exception(f"Display window timed out")
-        except FileNotFoundError:
-            raise Exception(f"display_images.py not found")   
-        
         return {
+            "images": level_data["images"],
+            "canvas_width": level_data["canvas_width"],
+            "canvas_height": level_data["canvas_height"],
             "question": f"How many {level_data['target']} did you see?",
+            "target": level_data["target"],
             "level": level,
-            "level_description": self.level_configuration[level]["description"]
+            "level_description": self.level_configuration[level]["description"],
+            "display_duration": 5
         }
     
     async def submit_answer(self, session_id: str, answer: int) -> Dict[str, Any]:
@@ -235,7 +233,7 @@ class MemoryGameService:
                 "correct_answer": correct_answer,
                 "game_over": True,
                 "final_score": final_score,
-                "max_score": 120,
+                "max_score": 100,
                 "score_saved": id is not None,
                 "message": "Game complete! " + ("All levels complete!") if last_answer else f"Wrong! Last answer was {correct_answer}"
             }

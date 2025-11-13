@@ -270,8 +270,7 @@ async def analytics(
     target = parse_day(on) if on else datetime.now().date()
     return await day_report(target)
 
-if __name__ in {"__main__", "__mp_main__"}:
-    ui.run_with(app,
+ui.run_with(app,
                 mount_path="/admin",
                 favicon="👤",
                 title="User Admin",
