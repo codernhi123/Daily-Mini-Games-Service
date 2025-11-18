@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trivia Games</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div id="main-menu-screen" class="screen">
+        <h1>My Game</h1>
+        <div>
+            <button id="start-game-btn">Start Game</button>
+            <button id="view-leaderboard-btn" style="background-color: rgb(0, 0, 0); color:aliceblue">View Leaderboard</button>
+        </div>
+    </div>
+
+    <div id="leaderboard-screen" class="screen" style="display:none;">
+        <h2 id="header-text">Leaderboard</h2>
+
+            <div id="game-toggle">
+                <button id="game1-btn" class="toggle-btn active">Trivia</button>
+                <button id="game2-btn" class="toggle-btn">Memory</button>
+            </div>
+
+            <table id="leaderboard-table">
+            <thead>
+                <tr>
+                <th>User</th>
+                <th>Score</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-body">
+                </tbody>
+            </table>
+
+            <div id="leaderboard-toggle">
+                <button id="global-btn" class="toggle-btn active">Global</button>
+                <button id="friend-btn" class="toggle-btn">Friend</button>
+            </div>
+
+            <button id="leaderboard-back-btn">Back to Menu</button>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
