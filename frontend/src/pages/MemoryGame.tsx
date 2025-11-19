@@ -3,8 +3,7 @@ import {useNavigate} from 'react-router-dom';
 import {api} from '../services/api';
 import {useAuth} from '../hooks/useAuth';
 import {GameLayout} from '../components/shared/GameLayout';
-
-  
+import { CountdownTimer } from '../components/shared/CountdownTimer';
 
 interface ImageData {
     filename: string;
@@ -34,6 +33,8 @@ export function MemoryGame() {
     const [canvasHeight, setCanvasHeight] = useState(800);
     const [countdown, setCountdown] = useState(5);
 
+		const [nextPlayTime, setNextPlayTime] = useState<string | null>(null);
+
     const startGame = async () => {
     try {
         	setIsLoading(true);
@@ -43,6 +44,7 @@ export function MemoryGame() {
      		});
       	if (!response.data.can_play) {
         	setFeedback(response.data.message);
+					setNextPlayTime(response.data.next_play_time || null);
         	setGameState('locked');
         	return;
       	}
@@ -185,7 +187,14 @@ export function MemoryGame() {
 			<GameLayout title="Memory Challenge" onExit={() => navigate('/')}>
 				<div className='text-center'>
 					<h2 className='text-3xl font-bold mb-4'>Already Played Today!</h2>
-					<p className='text-xl mb-8'>{feedback}</p> 
+					<p className='text-xl mb-4'>{feedback}</p> 
+
+					{nextPlayTime && (
+						<div className='mb-8'>
+							<CountdownTimer targetTime={nextPlayTime} />
+						</div>
+        	)}
+
 					<button 
 						onClick={() => navigate('/')}
 						className='px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700'>
