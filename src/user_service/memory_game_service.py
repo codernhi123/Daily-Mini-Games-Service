@@ -4,24 +4,15 @@ from datetime import datetime, timezone, timedelta, date
 from typing import Optional, Dict, List, Any
 
 class MemoryGameService:
-    # weekly_images = {
-    #     0: ["apple", "orange", "banana", "pear", "strawberry"],
-    #     1: ["apple", "orange", "banana", "pear", "strawberry"],
-    #     2: ["apple", "orange", "banana", "pear", "strawberry"],
-    #     3: ["apple", "orange", "banana", "pear", "strawberry"],
-    #     4: ["apple", "orange", "banana", "pear", "strawberry"],
-    #     5: ["apple", "orange", "banana", "pear", "strawberry"],
-    #     6: ["apple", "orange", "banana", "pear", "strawberry"],
-    # }
 
     weekly_images = {
-        0: ["apples", "oranges"],
-        1: ["bread", "burger"],
-        2: ["coffee", "eggs"],
-        3: ["child", "dog"],
-        4: ["door", "tipi"],
-        5: ["salt"],
-        6: ["fish"]
+        0: ["apples", "oranges", "banana", "mango", "watermelon", "strawberry"],
+        1: ["garlic", "lettuce", "broccoli", "carrot", "pepper", "tomato"],
+        5: ["coffee", "eggs", "bread", "bacon", "salt", "waffle"],
+        4: ["chicken", "cow", "horse", "sheep", "goat", "pig"],
+        3: ["volleyball", "basketball", "soccerball", "badminton", "bowling", "football"],
+        2: ["rainy", "sunny", "haily", "snowy", "stormy", "cloudy"],
+        6: ["fish", "child", "dog", "door", "tipi"]
     }
 
     level_configuration = {
