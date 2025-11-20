@@ -1,5 +1,4 @@
 from fastapi import Depends, HTTPException, APIRouter
-from pydantic import BaseModel
 from datetime import datetime
 #from .models.rate_limiter import check_rate_limiter
 #from user_service.auth.jwt_helper import validate_jwt

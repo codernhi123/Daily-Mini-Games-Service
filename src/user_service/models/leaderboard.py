@@ -4,7 +4,6 @@ from sqlalchemy import String, Integer, select, and_, ForeignKey, Index, delete,
 from sqlalchemy import DateTime, text, func
 from sqlalchemy.orm import Mapped, mapped_column, Session #todo: consider change to AsyncSession
 from .user import Base 
-from .user import User
 from .friend import FriendRepository
 from dotenv import load_dotenv
 load_dotenv()
