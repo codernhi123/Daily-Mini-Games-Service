@@ -10,9 +10,11 @@ from .models.user_v1 import (
 )
 from .analytics import build_sessions_for_day, summarize_day, average_reports
 #from typing import List
-from fastapi import FastAPI, Depends, Response, HTTPException # noqa: F401
+from fastapi import FastAPI, Depends, Response, HTTPException  # noqa: F401
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session # noqa: F401
+from fastapi.responses import FileResponse
+from sqlalchemy.orm import Session  # noqa: F401
 from sqlalchemy.exc import IntegrityError
 # from pydantic import TypeAdapter
 import logging
@@ -31,6 +33,7 @@ from .models.user import (
 )
 from .models.rate_limiter import check_rate_limiter
 from .friend_api import router as friends_router
+from .leaderboard_api import router as leaderboard_router
 from .memory_game_api import router as memory_router
 from .models.avatar_router import router as avatar_router
 from dotenv import load_dotenv
@@ -48,9 +51,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(friends_router)
+app.include_router(leaderboard_router)
 app.include_router(memory_router)
 app.include_router(avatar_router)
 
+app.mount("/static", StaticFiles(directory="src/static"), name="static")
+
+@app.get("/")
+async def read_root():
+    return FileResponse("src/static/index.html")
 
 @app.post("/v2/users/", status_code=201, dependencies=[Depends(check_rate_limiter)])
 async def create_user(

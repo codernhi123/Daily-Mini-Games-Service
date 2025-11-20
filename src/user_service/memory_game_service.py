@@ -114,7 +114,7 @@ class MemoryGameService:
     
     async def can_play_today(self, id: int) -> Dict[str, Any]:
         # Use the new dict-based API from GameState
-        state = await self.game_state.get_state(id, 'memory')
+        state = await self.game_state.get_state(id, 'Memory')
 
         if state["can_play"]:
             return {"can_play": True}
@@ -243,12 +243,11 @@ class MemoryGameService:
             )
 
             # Persist state + history
-            await self.game_state.update_state(id, "memory", now, next_midnight)
-            await self.game_history.add_entry(id, "memory", final_score, now)
+            await self.game_state.update_state(id, "Memory", now, next_midnight)
+            await self.game_history.add_entry(id, "Memory", final_score, now)
 
-            # Leaderboard probably wants just the date (keep your original behaviour)
-            today = now.date()
-            await self.leaderboard.update_score(id, "memory", final_score, today)
+            # Leaderboard wants the current time in UTC
+            await self.leaderboard.update_scores(id, "NULL", final_score, "Memory", now, now)
 
         del self.active_sessions[session_id]
 

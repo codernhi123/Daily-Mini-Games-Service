@@ -35,6 +35,8 @@ services:
         - action: sync+restart
           path: ./
           target: /app/
+    env_file:
+      - .env
 
 volumes:
   postgres_data: # Defines the named volume for data persistence
