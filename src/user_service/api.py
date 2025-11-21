@@ -37,6 +37,7 @@ from .leaderboard_api import router as leaderboard_router
 from .memory_game_api import router as memory_router
 from .models.avatar_router import router as avatar_router
 from dotenv import load_dotenv
+from .trivia_game_api import router as trivia_router 
 from admin import main  # noqa: F401
 
 load_dotenv()
@@ -45,7 +46,7 @@ logger = logging.getLogger('uvicorn.error')
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -54,6 +55,7 @@ app.include_router(friends_router)
 app.include_router(leaderboard_router)
 app.include_router(memory_router)
 app.include_router(avatar_router)
+app.include_router(trivia_router)
 
 app.mount("/static", StaticFiles(directory="src/static"), name="static")
 
