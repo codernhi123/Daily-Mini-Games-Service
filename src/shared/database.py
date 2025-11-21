@@ -44,6 +44,8 @@ def _ensure_sqlite_schema(engine):
     # Make sure the Event model module is imported so its table is registered on Base
     import user_service.models.event  # noqa: F401
     from user_service.models.user_v1 import Base_v1 
+    import user_service.models.game  # noqa: F401
+    
     Base.metadata.create_all(bind=engine)
     Base_v1.metadata.create_all(bind=engine)
 

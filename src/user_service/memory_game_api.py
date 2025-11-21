@@ -4,7 +4,7 @@ from typing import Optional
 from user_service.memory_game_service import MemoryGameService
 from user_service.game_state import get_game_state
 from user_service.game_history import get_game_history
-from user_service.leaderboards import get_leaderboards
+from user_service.models.leaderboard import get_leaderboard_repository
 
 router = APIRouter(prefix="/v2/games/memory", tags=["memory-game"])
 
@@ -16,7 +16,7 @@ def get_memory_service() -> MemoryGameService:
     if _memory_service is None:
         game_state = get_game_state()
         game_history = get_game_history()
-        leaderboards = get_leaderboards()
+        leaderboards = get_leaderboard_repository()
         _memory_service = MemoryGameService(game_state, game_history, leaderboards)
     return _memory_service
 

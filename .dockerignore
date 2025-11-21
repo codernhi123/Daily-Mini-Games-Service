@@ -1,1 +1,16 @@
 __pycache__/**
+# Ignore the massive dependencies folder
+node_modules
+frontend/node_modules
+
+# Ignore Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore git history (saves space)
+.git
+
+# Ignore environment variables (security)
+.env

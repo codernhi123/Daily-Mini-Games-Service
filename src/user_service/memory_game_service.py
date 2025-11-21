@@ -54,7 +54,7 @@ class MemoryGameService:
         self.game_state = game_state
         self.game_history = game_history
         self.leaderboard = leaderboard
-        self.active_sessions = {}
+        self.active_sessions: Dict[str, Dict[str, Any]] = {}
 
     @staticmethod
     def get_todays_images() -> List[str]:
@@ -64,7 +64,8 @@ class MemoryGameService:
     def _generate_level_data(self, level: int) -> Dict[str, Any]:
         configuration = self.level_configuration[level]
         todays_images = self.get_todays_images()
-        images = []
+        images: List[Dict[str, Any]] = []
+
         target_image = random.choice(todays_images)
         correct_image_count = 0
 
@@ -73,7 +74,7 @@ class MemoryGameService:
         image_size = 120
 
 
-        for i in range(configuration["count"]):
+        for _ in range(configuration["count"]):
             if random.random() < 0.40:
                 filename = target_image
                 correct_image_count += 1
@@ -85,11 +86,11 @@ class MemoryGameService:
             x = random.randint(0, canvas_width - image_size)
             y = random.randint(0, canvas_height - image_size)
 
-            image_data = {
+            image_data: Dict[str, Any] = {
                 "filename": f"{filename}.png",
                 "x": x,
                 "y": y,
-                "size": image_size
+                "size": image_size,
             }
 
             if configuration["recolor"]:
@@ -112,22 +113,34 @@ class MemoryGameService:
         }
     
     async def can_play_today(self, id: int) -> Dict[str, Any]:
-        state = await self.game_state.get_state(id, 'memory')
-        if not state:
+        # Use the new dict-based API from GameState
+        state = await self.game_state.get_state(id, 'Memory')
+
+        if state["can_play"]:
             return {"can_play": True}
+             
+        # if not state:
+        #     return {"can_play": True}
         
-        today = date.today()
-        if state.last_played_date < today:
+        # today = date.today()
+        # if state.last_played_date < today:
+        #     return {"can_play": True}
+
+        # user is locked
+        next_play_time = state["next_play_time"]
+
+        # if for some reason next_play_time is None, treat as can_play
+        if next_play_time is None:
             return {"can_play": True}
         
         return {
             "can_play": False,
-            "next_play_at": state.can_play_again_at.isoformat(),
+            "next_play_time": next_play_time.isoformat(),
             "message": "You have already played the memory game today"
         }
     
     async def start_game(self, id: Optional[int] = None) -> Dict[str, Any]:
-        if id:
+        if id is not None:
             can_play = await self.can_play_today(id)
             if not can_play["can_play"]:
                 return can_play
@@ -198,7 +211,11 @@ class MemoryGameService:
                 "game_over": False,
                 "current_level": next_level,
                 "level_description": self.level_configuration[next_level]["description"],
-                "message": "Correct! Moving to the next level" if is_correct else f"Wrong! It was {correct_answer}, moving to the next level"
+                "message": (
+                    "Correct! Moving to the next level"
+                    if is_correct
+                    else f"Wrong! It was {correct_answer}, moving to the next level"
+                ),
             }
         else: 
             return await self._complete_game(session_id, is_correct, correct_answer)
@@ -208,16 +225,37 @@ class MemoryGameService:
         id = session["id"]
         final_score = session["score"]
 
-        if id:
-            today = date.today()
-            tomorrow = datetime.combine(today + timedelta(days=1), datetime.min.time())
-            tomorrow = tomorrow.replace(tzinfo = timezone.utc)
+        now = datetime.now(timezone.utc)
 
-            await self.game_state.update_state(id, "memory", today, tomorrow)
-            await self.game_history.add_entry(id, "memory", final_score, today)
-            await self.leaderboard.update_score(id, "memory", final_score, today)
+        if id is not None:
+            # today = date.today()
+            # tomorrow = datetime.combine(today + timedelta(days=1), datetime.min.time())
+            # tomorrow = tomorrow.replace(tzinfo = timezone.utc)
+
+            # await self.game_state.update_state(id, "memory", today, tomorrow)
+            # await self.game_history.add_entry(id, "memory", final_score, today)
+            # await self.leaderboard.update_score(id, "memory", final_score, today)
+
+            # Next play time: next midnight UTC
+            next_midnight = (
+                (now + timedelta(days=1))
+                .replace(hour=0, minute=0, second=0, microsecond=0)
+            )
+
+            # Persist state + history
+            await self.game_state.update_state(id, "Memory", now, next_midnight)
+            await self.game_history.add_entry(id, "Memory", final_score, now)
+
+            # Leaderboard wants the current time in UTC
+            await self.leaderboard.update_scores(id, "NULL", final_score, "Memory", now, now)
 
         del self.active_sessions[session_id]
+
+        message_suffix = (
+            "All levels complete!"
+            if last_answer
+            else f"Wrong! Last answer was {correct_answer}"
+        )
 
         return {
                 "is_correct": last_answer,
@@ -226,12 +264,12 @@ class MemoryGameService:
                 "final_score": final_score,
                 "max_score": 100,
                 "score_saved": id is not None,
-                "message": "Game complete! " + ("All levels complete!") if last_answer else f"Wrong! Last answer was {correct_answer}"
+                "message": "Game complete! " + message_suffix,
             }
     
     def cleanup_inactive_sessions(self):
         now = datetime.now(timezone.utc)
-        expired = []
+        expired: List[str] = []
 
         for session_id, session in self.active_sessions.items():
             age = (now - session["started_at"]).total_seconds()
@@ -243,8 +281,3 @@ class MemoryGameService:
 
 def get_memory_game_service(game_state = None, game_history = None, leaderboard = None) -> MemoryGameService:
     return MemoryGameService(game_state, game_history, leaderboard)
-    
-
-
-
-    

@@ -30,9 +30,9 @@ services:
       POSTGRES_HOST: db
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      STORAGE_SECRET: ${STORAGE_SECRET}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}       # <--- Added this
+      STORAGE_SECRET: ${STORAGE_SECRET}  # <--- Added this
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD} # <--- Added this
     develop:
       watch:
         - action: sync+restart
