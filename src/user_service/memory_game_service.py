@@ -8,10 +8,10 @@ class MemoryGameService:
     weekly_images = {
         0: ["apples", "oranges", "banana", "mango", "watermelon", "strawberry"],
         1: ["garlic", "lettuce", "broccoli", "carrot", "pepper", "tomato"],
-        5: ["coffee", "eggs", "bread", "bacon", "salt", "waffle"],
+        2: ["coffee", "eggs", "bread", "bacon", "salt", "waffle"],
         4: ["chicken", "cow", "horse", "sheep", "goat", "pig"],
         3: ["volleyball", "basketball", "soccerball", "badminton", "bowling", "football"],
-        2: ["rainy", "sunny", "haily", "snowy", "stormy", "cloudy"],
+        5: ["rainy", "sunny", "haily", "snowy", "stormy", "cloudy"],
         6: ["fish", "child", "dog", "door", "tipi"]
     }
 
