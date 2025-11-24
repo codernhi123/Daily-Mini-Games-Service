@@ -156,7 +156,7 @@ function Home() {
         <div className="flex flex-col gap-4 items-center">
           <Link
             to="/memory-game"
-            className="w-64 whitespace-nowrap px-8 py-4 bg-blue-600 text-white rounded-lg text-xl font-semibold text-center hover:bg-blue-700"
+            className="w-64 whitespace-nowrap px-8 py-4 bg-pink-600 text-white rounded-lg text-xl font-semibold text-center hover:bg-blue-700"
           >
             Play Memory Game
           </Link>

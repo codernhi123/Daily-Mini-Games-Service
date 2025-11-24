@@ -14,7 +14,7 @@ class MemoryGameService:
         4: ["chicken", "cow", "horse", "sheep", "goat", "pig"],
         3: ["volleyball", "basketball", "soccerball", "badminton", "bowling", "football"],
         5: ["rainy", "sunny", "haily", "snowy", "stormy", "cloudy"],
-        6: ["fish", "child", "dog", "door", "tipi"]
+        6: ["fish", "child", "dog", "door", "tipi", "tree"]
     }
 
     level_configuration = {
@@ -250,8 +250,11 @@ class MemoryGameService:
             await self.game_state.update_state(id, "Memory", now, next_midnight)
             await self.game_history.add_entry(id, "Memory", final_score, now)
 
+            # user_name = session.get("user_name", "Unknown")
+
             # Leaderboard wants the current time in UTC
             await self.leaderboard.update_scores(id, player_name, final_score, "Memory", now, next_midnight)
+            # await self.leaderboard.update_scores(id, user_name, final_score, "Memory", now, next_midnight)
 
         del self.active_sessions[session_id]
 
