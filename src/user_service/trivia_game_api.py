@@ -45,7 +45,7 @@ async def start_trivia_game(
             try:
                 payload = validate_jwt(token)
                 user_id = int(payload["sub"])
-            except:
+            except ValueError:
                 pass  # Invalid/expired token, continue as guest
         
         user_name = None
