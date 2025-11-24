@@ -4,7 +4,7 @@ from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
 from shared.database import get_db
 from user_service.models.game import GameStateModel
-
+from fastapi import Depends
 
 class GameState:
     """
@@ -102,10 +102,5 @@ class GameState:
         self.session.commit()
 
 
-def get_game_state(db: Session | None = None) -> GameState:
-    """
-    kept the get_game_state() signature so memory_game_api keeps working, but now it actually uses the DB.
-    """
-    if db is None:
-        db = next(get_db())
+def get_game_state(db: Session = Depends(get_db)) -> GameState:
     return GameState(db)

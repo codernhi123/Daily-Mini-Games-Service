@@ -4,7 +4,7 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from shared.database import get_db
 from user_service.models.game import GameHistoryModel
-
+from fastapi import Depends
 
 class GameHistory:
     """
@@ -67,7 +67,5 @@ class GameHistory:
         return list(q.all())
 
 
-def get_game_history(db: Session | None = None) -> GameHistory:
-    if db is None:
-        db = next(get_db())
+def get_game_history(db: Session = Depends(get_db)) -> GameHistory:
     return GameHistory(db)

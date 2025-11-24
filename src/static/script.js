@@ -81,6 +81,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    startGameBtn.addEventListener('click', () => {
+        window.location.href = 'http://localhost:5173';
+    });
+
     viewLeaderboardBtn.addEventListener('click', () => {
         mainMenuScreen.style.display = 'none';// Hide the main menu
         leaderboardScreen.style.display = 'flex';// Show the leaderboard
