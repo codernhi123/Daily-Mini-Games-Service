@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, date, timedelta, timezone
-from fastapi import Query
+from fastapi import Query, Request
 from .models.event import (
     EventSchemaCreate, EventSchemaReturn, EventQuery,
     EventRepository, get_event_repository
@@ -140,6 +140,7 @@ async def delete_user_1(
 @app.post("/v2/authentications/", dependencies=[Depends(check_rate_limiter)])
 async def become_authenticated(
     auth_request: AuthRequest,
+    response: Response,
     user_repo: UserRepository = Depends(get_user_repository),
 ):
     user = await user_repo.get_by_name(auth_request.name)
@@ -169,8 +170,29 @@ async def become_authenticated(
 
     await user_repo.update_active_jwt(user.id, access_token)
 
+    max_age_seconds = int((expiry_dt - now).total_seconds())
+    response.set_cookie(
+        key="jwt",
+        value=access_token,
+        httponly=True,
+        secure=False,  # False for localhost, True for production HTTPS
+        samesite="lax",
+        max_age=max_age_seconds,
+        path="/"
+    )
+
     return AuthResponse(jwt=access_token)
 
+@app.post("/v2/authentications/logout")
+async def logout(response: Response):
+    response.delete_cookie(
+        key="jwt",
+        path="/",
+        samesite="lax",
+        httponly=True,     # optional but safe
+        secure=False       # match login
+    )
+    return {"message": "Logged out"}
 
 @app.delete("/v2/authentications/", dependencies=[Depends(check_rate_limiter)])
 async def delete_authentication(
@@ -187,6 +209,20 @@ async def delete_authentication(
 
     return {"detail": "JWT successfully revoked"}
 
+@app.get("/v2/authentications/me")
+async def get_current_user(
+    request: Request,
+    user_repo: UserRepository = Depends(get_user_repository)
+):
+    token = request.cookies.get("jwt")
+    if not token:
+        raise HTTPException(status_code=401, detail="No JWT found")
+
+    payload = validate_jwt(token)
+    user_id = int(payload["sub"])
+
+    user = await user_repo.get_by_id(user_id)
+    return {"id": user.id, "name": user.name}
 
 @app.get("/v2/users/", dependencies=[Depends(check_rate_limiter)])
 async def list_users(user_repo: UserRepository = Depends(get_user_repository)):

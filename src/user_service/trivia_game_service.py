@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, List, Any
 
+_ACTIVE_SESSIONS: Dict[str, Dict[str, Any]] = {}
 
 class TriviaGameService:
     """
@@ -368,7 +369,7 @@ class TriviaGameService:
         self.game_state = game_state
         self.game_history = game_history
         self.leaderboard = leaderboard
-        self.active_sessions: Dict[str, Dict[str, Any]] = {}
+        self.active_sessions = _ACTIVE_SESSIONS
 
         # Max possible score for a perfect game (5 correct in a row)
         base = self.LEVELS * self.BASE_POINTS
@@ -410,7 +411,7 @@ class TriviaGameService:
         # Copy to avoid mutating the class-level constants
         return [q.copy() for q in questions[: self.LEVELS]]
 
-    async def start_game(self, id: Optional[int] = None) -> Dict[str, Any]:
+    async def start_game(self, id: Optional[int] = None, name: Optional[str] = None) -> Dict[str, Any]:
         if id is not None:
             can_play = await self.can_play_today(id)
             if not can_play["can_play"]:
@@ -421,6 +422,7 @@ class TriviaGameService:
 
         self.active_sessions[session_id] = {
             "id": id,
+            "name": name,
             "score": 0,
             "index": 0,
             "questions": questions,
@@ -524,6 +526,7 @@ class TriviaGameService:
     ) -> Dict[str, Any]:
         session = self.active_sessions[session_id]
         id = session["id"]
+        player_name = session["name"]
         final_score = session["score"]
         best_streak = session.get("best_streak", 0)
         now = datetime.now(timezone.utc)
@@ -537,7 +540,7 @@ class TriviaGameService:
             await self.game_state.update_state(id, "Trivia", now, next_midnight)
             await self.game_history.add_entry(id, "Trivia", final_score, now)
             await self.leaderboard.update_scores(
-                id, "NULL", final_score, "Trivia", now, now
+                id, player_name, final_score, "Trivia", now, now
             )
 
         del self.active_sessions[session_id]

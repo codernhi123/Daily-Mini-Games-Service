@@ -39,9 +39,7 @@ export function MemoryGame() {
     try {
         	setIsLoading(true);
 
-        	const response = await api.post('/v2/games/memory/start', null, {
-          	params: {user_id: user?.id}
-     		});
+        	const response = await api.post('/v2/games/memory/start');
       	if (!response.data.can_play) {
         	setFeedback(response.data.message);
 					setNextPlayTime(response.data.next_play_time || null);
@@ -145,7 +143,7 @@ export function MemoryGame() {
 
 	if (gameState === 'ready') {
 		return (
-			<GameLayout title="Memory Challenge" onExit={() => navigate('/')}>
+			<GameLayout title="Memory Challenge" onExit={() => navigate('/')} userId={user?.name}>
 				<div className='text-center max-w-2xl mx-auto'>
 					<h2 className='text-4xl font-bold mb-6'>Memory Challenge</h2>
 					<div className='bg-blue-100 p-6 rounded-lg mb-8'>
@@ -164,7 +162,7 @@ export function MemoryGame() {
 								WARNING! Playing as guest - score won't be saved to leaderboard
 							</p>
 							<button 
-								onClick={() => navigate('/login')}
+								onClick={() => navigate('/')}
 								className='underline text-blue-600 hover:text-blue-800'>
 									Login To Save Your Scores
 								</button>
@@ -207,7 +205,7 @@ export function MemoryGame() {
 
 	if (gameState === 'displaying') {
 		return (
-			<GameLayout title="Memory Challenge" onExit={() => navigate('/')} showScore score={score}>
+			<GameLayout title="Memory Challenge" onExit={() => navigate('/')} showScore score={score} userId={user?.name}>
 				<div className='text-center'>
 					<h2 className='text-3xl font-bold mb-4'>Level {level}</h2>
 					<p className='text-lg text-gray-600 mb-4'>{levelDescription}</p>
@@ -250,7 +248,7 @@ export function MemoryGame() {
 
 	if (gameState === 'answering') {
 		return (
-			<GameLayout title="Memory Challenge" onExit={() => navigate('/')} showScore score={score}>
+			<GameLayout title="Memory Challenge" onExit={() => navigate('/')} showScore score={score} userId={user?.name}>
 				<div className='text-center max-w-lg mx-auto'>
 					<h2 className='text-2xl font-bold mb-2'>Level {level}</h2>
 					<p className='text-sm text-gray-600 mb-8'>{levelDescription}</p>
@@ -286,7 +284,7 @@ export function MemoryGame() {
 
 	if (gameState === 'complete') {
 		return (
-			<GameLayout title="Memory Challenge" onExit={() => navigate('/')}>
+			<GameLayout title="Memory Challenge" onExit={() => navigate('/')} userId={user?.name}>
 				<div className='text-center'>
 					<h2 className='text-4xl font-bold mb-4'> Congratulations! Game Complete! </h2>
 					<div className='my-8'>
@@ -312,7 +310,7 @@ export function MemoryGame() {
 					<div className='space-x-4'>
 						{user && (
 							<button
-								onClick={() => navigate('/leaderboards')}
+								onClick={() => window.location.href = 'http://localhost:8000'}
 								className='px-8 py-3 bg-blue-600 text-white rounded-lg text-lg hover:bg-blue-700'>
 								View Leaderboards
 							</button>
