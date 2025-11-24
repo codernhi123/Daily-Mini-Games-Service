@@ -410,7 +410,7 @@ export default function TriviaGame() {
                 Score Not Saved — guest mode
               </p>
               <button
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/")}
                 className="underline text-blue-600 hover:text-blue-800"
               >
                 Login To Save Future Scores
