@@ -40,6 +40,22 @@ async def get_friend_leaderboard(
         for qr in rows
     ]
 
+@router.get("/inactive/{user_id}/{game_name}/{when}", status_code=200)
+async def get_inactive_leaderboard(
+    user_id: int,
+    game_name: str,
+    when: datetime,
+    repo: LeaderboardRepository = Depends(get_leaderboard_repository),
+    friend_repo: FriendRepository = Depends(get_friend_repository)
+):
+    rows = await repo.view_inactive_scores(user_id, game_name, when, friend_repo)
+    return [
+        {
+            "user_id": qr
+        }
+        for qr in rows
+    ]
+
 @router.post("/update-leader-board/", status_code=200)
 async def update_leader_board(
     user_id: int,
