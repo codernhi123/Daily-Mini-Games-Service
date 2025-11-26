@@ -3,6 +3,7 @@ import { MemoryGame } from "./pages/MemoryGame";
 import TriviaGame from "./pages/TriviaGame";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import GameStats from "./pages/GameStats";
 
 function Home() {
   const [name, setName] = useState("");
@@ -57,7 +58,7 @@ function Home() {
     const expiry =
       expiryDate.toISOString().replace("T", " ").split(".")[0];
 
-    const response = await axios.post(
+    await axios.post(
       "http://localhost:8000/v2/authentications/",
       { name, password, expiry },
       { withCredentials: true }
@@ -168,6 +169,13 @@ function Home() {
             Play Trivia Game
           </Link>
 
+          <Link
+            to="/stats"
+            className="w-64 whitespace-nowrap px-8 py-4 bg-indigo-600 text-white rounded-lg text-xl font-semibold text-center hover:bg-indigo-700"
+          >
+            View My Stats
+          </Link>
+
           <a
             href="http://localhost:8000"
             className="w-64 whitespace-nowrap px-8 py-4 bg-purple-600 text-white rounded-lg text-xl font-semibold text-center hover:bg-purple-700"
@@ -188,6 +196,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/memory-game" element={<MemoryGame />} />
         <Route path="/trivia-game" element={<TriviaGame />} />
+        <Route path="/stats" element={<GameStats />} />
       </Routes>
     </BrowserRouter>
   );
