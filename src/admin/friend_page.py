@@ -1,18 +1,17 @@
 import os
 from typing import List, Dict, Any
 from nicegui import ui, app
+from fastapi import Request
 import httpx
 
 API_BASE = os.getenv('FRIENDS_API_BASE', 'http://localhost:8000')
 
 FRIENDS_URL = f"{API_BASE}/v2/users"
 
-async def get_user_id(path: str, token: str):
-    if not token:
-        return None
-    params = {'token': token} 
+async def get_user_id(jwt_cookie_value: str): 
+    cookies = {"jwt": jwt_cookie_value}
     async with httpx.AsyncClient(base_url=API_BASE, timeout=10) as client:
-        response = await client.get(path, params=params) 
+        response = await client.get("/v2/authentications/me", cookies=cookies) 
         if response.status_code >= 400:
             return None
 
@@ -51,10 +50,11 @@ async def api_put(path, token, json = None, params = None):
     return await api_request('PUT', path, token, json_data=json, params=params)
 
 @ui.page('/friends')
-def friends_page():
+async def friends_page(request: Request):
     ui.label('Friends').classes('text-2xl font-bold mb-4')
-    token = app.storage.user.get('token')
-    current_user = get_user_id("/v2/authentications/me", token)
+    token = request.cookies.get("jwt")
+
+    current_user = await get_user_id(token)
 
     if not token or not current_user:
         ui.label('Log in to be friends with other.').classes('text-red-500 text-xl')
