@@ -1,7 +1,7 @@
 from typing import Literal
 from fastapi import Depends, HTTPException, APIRouter, Query
 from pydantic import BaseModel
-from .models.rate_limiter import check_rate_limiter
+#from .models.rate_limiter import check_rate_limiter
 from user_service.auth.jwt_helper import validate_jwt
 
 from .models.friend import FriendRepository, get_friend_repository
