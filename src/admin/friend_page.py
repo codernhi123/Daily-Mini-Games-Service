@@ -50,7 +50,7 @@ async def api_post(path, token, json = None, params = None):
 async def api_put(path, token, json = None, params = None):
     return await api_request('PUT', path, token, json_data=json, params=params)
 
-@ui.page('/friendpage')
+@ui.page('/friends')
 def friends_page():
     ui.label('Friends').classes('text-2xl font-bold mb-4')
     token = app.storage.user.get('token')

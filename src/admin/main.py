@@ -77,7 +77,7 @@ async def user_list(user_repo: UserRepository) -> None:
 
 
 #page with password gate
-@ui.page("/admin")
+@ui.page("/")
 async def index(user_repo: UserRepository = Depends(get_user_repository)):
 
     # session flag
