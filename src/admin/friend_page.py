@@ -1,6 +1,6 @@
 import os
 from typing import List, Dict, Any
-from nicegui import ui, app
+from nicegui import ui
 from fastapi import Request
 import httpx
 
