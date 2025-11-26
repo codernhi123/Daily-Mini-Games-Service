@@ -485,7 +485,6 @@ class TriviaGameService:
         else:
             # wrong answer breaks the streak
             session["streak"] = 0
-        # -----------------------------------
 
         # Move to next question
         session["index"] += 1
