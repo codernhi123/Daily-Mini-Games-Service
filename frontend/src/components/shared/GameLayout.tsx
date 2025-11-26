@@ -6,6 +6,7 @@ interface GameLayoutProps {
   onExit: () => void;
   showScore?: boolean; // Optional
   score?: number;      // Optional
+  userId?: string | number;
   children: ReactNode;
 }
 
@@ -15,6 +16,7 @@ export function GameLayout({
   onExit,
   showScore = false, // Default false
   score = 0,         // Default 0
+  userId,
   children,
 }: GameLayoutProps) {
   return (
@@ -33,6 +35,13 @@ export function GameLayout({
 
         {/* Controls Section */}
         <div className="flex gap-4 items-center">
+          <div className="bg-white px-6 py-3 rounded-lg shadow-md">
+            <span className="text-sm text-gray-600">User: </span>
+            <span className="text-lg font-bold text-gray-800">
+              {userId ?? 'Guest'}
+            </span>
+          </div>
+
           {showScore && (
             <div className="bg-white px-6 py-3 rounded-lg shadow-md">
               <span className="text-sm text-gray-600">Score: </span>

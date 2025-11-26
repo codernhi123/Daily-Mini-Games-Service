@@ -21,12 +21,31 @@ document.addEventListener('DOMContentLoaded', () => {
     // Get current stat
     const now = new Date();
     const time_now = now.toISOString();
+
     const when = encodeURIComponent(time_now);
-    const user_id = 1;
 
     // Track the state
     let currentLeaderboardType = 'global'; // Scope
     let currentLeaderboardGame = 'Trivia'; // Game
+
+    async function getMyId() {
+        try {
+            // COOKIE CHANGE: No headers needed! The browser sends the cookie automatically.
+            const response = await fetch("/v2/authentications/me");
+
+            if (!response.ok) {
+                // If this fails, it usually means the cookie is missing/expired (User not logged in)
+                console.log("User not logged in (Auth check failed)");
+                return null;
+            }
+            
+            const user_data = await response.json();
+            return user_data.id;
+        } catch (error) {
+            console.error("Could not get User ID:", error);
+            return null;
+        }
+    }
 
     async function fetchLeaderboardData(type, user_id, game_name, when) {
         leaderboardBody.innerHTML = '<tr><td colspan="2">Loading...</td></tr>';
@@ -44,7 +63,10 @@ document.addEventListener('DOMContentLoaded', () => {
             renderLeaderboard(scores);
         } catch (error) {
             console.error('Failed to fetch leaderboard:', error);
-            leaderboardBody.innerHTML = '<tr><td colspan="2">Failed to load scores.</td></tr>';
+            if (user_id != null) 
+                leaderboardBody.innerHTML = '<tr><td colspan="2">Failed to load scores.</td></tr>';
+            else 
+                leaderboardBody.innerHTML = '<tr><td colspan="2">Login to see friends.</td></tr>';
         }
     }
 
@@ -81,7 +103,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    viewLeaderboardBtn.addEventListener('click', () => {
+    startGameBtn.addEventListener('click', () => {
+        window.location.href = 'http://localhost:5173';
+    });
+
+    viewLeaderboardBtn.addEventListener('click', async () => {
         mainMenuScreen.style.display = 'none';// Hide the main menu
         leaderboardScreen.style.display = 'flex';// Show the leaderboard
 
@@ -89,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentLeaderboardGame = 'Trivia';
         updateToggleButtons();
         
+        const user_id = await getMyId();
         fetchLeaderboardData(currentLeaderboardType, user_id, currentLeaderboardGame, when);
     });
 
@@ -97,34 +124,38 @@ document.addEventListener('DOMContentLoaded', () => {
         leaderboardScreen.style.display = 'none';// Hide the leaderboard
     });
 
-    globalBtn.addEventListener('click', () => {
+    globalBtn.addEventListener('click', async () => {
         if (currentLeaderboardType !== 'global') {
             currentLeaderboardType = 'global';
             updateToggleButtons();
+            const user_id = await getMyId();
             fetchLeaderboardData(currentLeaderboardType, user_id, currentLeaderboardGame, when);
         }
     });
 
-    friendBtn.addEventListener('click', () => {
+    friendBtn.addEventListener('click', async () => {
         if (currentLeaderboardType !== 'friend') {
             currentLeaderboardType = 'friend';
             updateToggleButtons();
+            const user_id = await getMyId();
             fetchLeaderboardData(currentLeaderboardType, user_id, currentLeaderboardGame, when);
         }
     });
 
-    game1Btn.addEventListener('click', () => {
+    game1Btn.addEventListener('click', async () => {
         if (currentLeaderboardGame !== 'Trivia') {
             currentLeaderboardGame = 'Trivia';
             updateToggleButtons();
+            const user_id = await getMyId();
             fetchLeaderboardData(currentLeaderboardType, user_id, currentLeaderboardGame, when);
         }
     });
 
-    game2Btn.addEventListener('click', () => {
+    game2Btn.addEventListener('click', async () => {
         if (currentLeaderboardGame !== 'Memory') {
             currentLeaderboardGame = 'Memory';
             updateToggleButtons();
+            const user_id = await getMyId();
             fetchLeaderboardData(currentLeaderboardType, user_id, currentLeaderboardGame, when);
         }
     });

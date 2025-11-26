@@ -3,16 +3,18 @@ import uuid
 from datetime import datetime, timezone, timedelta, date
 from typing import Optional, Dict, List, Any
 
+_ACTIVE_SESSIONS: Dict[str, Dict[str, Any]] = {}
+
 class MemoryGameService:
 
     weekly_images = {
         0: ["apples", "oranges", "banana", "mango", "watermelon", "strawberry"],
         1: ["garlic", "lettuce", "broccoli", "carrot", "pepper", "tomato"],
-        5: ["coffee", "eggs", "bread", "bacon", "salt", "waffle"],
+        2: ["coffee", "eggs", "bread", "bacon", "salt", "waffle"],
         4: ["chicken", "cow", "horse", "sheep", "goat", "pig"],
         3: ["volleyball", "basketball", "soccerball", "badminton", "bowling", "football"],
-        2: ["rainy", "sunny", "haily", "snowy", "stormy", "cloudy"],
-        6: ["fish", "child", "dog", "door", "tipi"]
+        5: ["rainy", "sunny", "haily", "snowy", "stormy", "cloudy"],
+        6: ["fish", "child", "dog", "door", "tipi", "tree"]
     }
 
     level_configuration = {
@@ -54,7 +56,7 @@ class MemoryGameService:
         self.game_state = game_state
         self.game_history = game_history
         self.leaderboard = leaderboard
-        self.active_sessions: Dict[str, Dict[str, Any]] = {}
+        self.active_sessions = _ACTIVE_SESSIONS
 
     @staticmethod
     def get_todays_images() -> List[str]:
@@ -139,7 +141,7 @@ class MemoryGameService:
             "message": "You have already played the memory game today"
         }
     
-    async def start_game(self, id: Optional[int] = None) -> Dict[str, Any]:
+    async def start_game(self, id: Optional[int] = None, name: Optional[str] = None) -> Dict[str, Any]:
         if id is not None:
             can_play = await self.can_play_today(id)
             if not can_play["can_play"]:
@@ -150,6 +152,7 @@ class MemoryGameService:
         session_id = str(uuid.uuid4())
         self.active_sessions[session_id] = {
             "id": id,
+            "name": name,
             "level": 1,
             "score": 0,
             "current_level_data": level_data,
@@ -223,6 +226,7 @@ class MemoryGameService:
     async def _complete_game(self, session_id: str, last_answer: bool, correct_answer: int) -> Dict[str, Any]:
         session = self.active_sessions[session_id]
         id = session["id"]
+        player_name = session["name"]
         final_score = session["score"]
 
         now = datetime.now(timezone.utc)
@@ -246,8 +250,11 @@ class MemoryGameService:
             await self.game_state.update_state(id, "Memory", now, next_midnight)
             await self.game_history.add_entry(id, "Memory", final_score, now)
 
+            # user_name = session.get("user_name", "Unknown")
+
             # Leaderboard wants the current time in UTC
-            await self.leaderboard.update_scores(id, "NULL", final_score, "Memory", now, now)
+            await self.leaderboard.update_scores(id, player_name, final_score, "Memory", now, next_midnight)
+            # await self.leaderboard.update_scores(id, user_name, final_score, "Memory", now, next_midnight)
 
         del self.active_sessions[session_id]
 

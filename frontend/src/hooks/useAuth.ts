@@ -6,12 +6,31 @@ interface User {
 }
 
 export function useAuth() {
-    const [user, setUser] = useState<User | null>(null);
-    useEffect(() => {
-        const storedUser = localStorage.getItem('user')
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/v2/authentications/me", {
+          method: "GET",
+          credentials: "include"
+        });
+
+        if (!res.ok) {
+          setUser(null);
+          return;
         }
-    }, []);
-    return { user, setUser}
+
+        const data = await res.json();
+        setUser(data); // {id, name}
+      } catch (error) {
+        console.error("Failed to fetch user", error);
+        setUser(null);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  return { user, setUser };
 }

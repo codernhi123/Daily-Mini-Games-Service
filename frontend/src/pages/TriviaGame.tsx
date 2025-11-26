@@ -21,7 +21,7 @@ interface TriviaQuestion {
 export default function TriviaGame() {
   const navigate = useNavigate();
   const {user} = useAuth();
-
+  console.log("user object:", user);
   const [gameState, setGameState] = useState<GameState>("ready");
   const [sessionId, setSessionId] = useState<string | null>(null);
 
@@ -47,9 +47,7 @@ export default function TriviaGame() {
     try {
       setIsLoading(true);
 
-      const res = await api.post("/v2/games/trivia/start", null, {
-        params: {user_id: user?.id},
-      });
+      const res = await api.post("/v2/games/trivia/start");
 
       if (!res.data.can_play) {
         setFeedback(res.data.message || "You already played today.");
@@ -218,7 +216,7 @@ export default function TriviaGame() {
   // READY
   if (gameState === "ready") {
     return (
-      <GameLayout title="Trivia Challenge" onExit={() => navigate("/")}>
+      <GameLayout title="Trivia Challenge" onExit={() => navigate("/")} userId={user?.name}>
         <div className="text-center max-w-2xl mx-auto">
           <h2 className="text-4xl font-bold mb-6">Trivia Challenge</h2>
 
@@ -242,7 +240,7 @@ export default function TriviaGame() {
                 WARNING! Playing as guest — score won&apos;t be saved.
               </p>
               <button
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/")}
                 className="underline text-blue-600 hover:text-blue-800"
               >
                 Login To Save Your Scores
@@ -265,7 +263,7 @@ export default function TriviaGame() {
   // LOCKED
   if (gameState === "locked") {
     return (
-      <GameLayout title="Trivia Challenge" onExit={() => navigate("/")}>
+      <GameLayout title="Trivia Challenge" onExit={() => navigate("/")} userId={user?.name}>
         <div className="text-center">
           <h2 className="text-3xl font-bold mb-4">Already Played Today!</h2>
           <p className="text-xl mb-4">{feedback}</p>
@@ -299,6 +297,7 @@ export default function TriviaGame() {
         onExit={() => navigate("/")}
         showScore
         score={score}
+        userId={user?.name}
         subtitle={subtitle}
       >
         <div className="text-center max-w-2xl mx-auto">
@@ -372,7 +371,7 @@ export default function TriviaGame() {
   // COMPLETE
   if (gameState === "complete") {
     return (
-      <GameLayout title="Trivia Challenge" onExit={() => navigate("/")}>
+      <GameLayout title="Trivia Challenge" onExit={() => navigate("/")} userId={user?.name}>
         <div className="text-center">
           <h2 className="text-4xl font-bold mb-4">Game Complete!</h2>
 
@@ -411,7 +410,7 @@ export default function TriviaGame() {
                 Score Not Saved — guest mode
               </p>
               <button
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/")}
                 className="underline text-blue-600 hover:text-blue-800"
               >
                 Login To Save Future Scores
@@ -422,7 +421,7 @@ export default function TriviaGame() {
           <div className="space-x-4">
             {user && (
               <button
-                onClick={() => navigate("/leaderboards")}
+                onClick={() => window.location.href = 'http://localhost:8000'}
                 className="px-8 py-3 bg-blue-600 text-white rounded-lg text-lg hover:bg-blue-700"
               >
                 View Leaderboards
