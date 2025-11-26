@@ -39,7 +39,7 @@ from .models.avatar_router import router as avatar_router
 from dotenv import load_dotenv
 from .trivia_game_api import router as trivia_router 
 from admin import main  # noqa: F401
-from admin import friend_page # noqa: F401
+from admin import friend_page  # noqa: F401
 
 load_dotenv()
 
@@ -397,7 +397,7 @@ async def analytics(
 
 ui.run_with(
     app,
-    #mount_path="/admin",
+    mount_path="/admin",
     favicon="👤",
     title="User Admin",
     storage_secret=os.getenv('STORAGE_SECRET'),
