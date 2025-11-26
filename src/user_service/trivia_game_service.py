@@ -7,23 +7,23 @@ _ACTIVE_SESSIONS: Dict[str, Dict[str, Any]] = {}
 class TriviaGameService:
     """
     Trivia game:
-    - 5 questions per run (LEVELS = 5)
+    - 10 questions per run (LEVELS = 10)
     - Base scoring: 100 points for any correct answer
     - Streak bonus: +10 points per streak level above 1
         1st correct in a row: 100
         2nd in a row: 100 + 10  = 110
         3rd in a row: 100 + 20  = 120
         ...
-    - Max score for 5/5:
-        base: 5 * 100 = 500
-        bonus: 10 + 20 + 30 + 40 = 100
-        total max = 600
+    - Max score for 10/10:
+        base: 10 * 100 = 1000
+        bonus: 10 + 20 + ... + 90 = 450
+        total max = 1450
     - Question set depends on the current day of the week
     - Logged-in users: once per day (state + leaderboard)
     - Guests: can play anytime, but scores are not saved
     """
 
-    LEVELS = 5
+    LEVELS = 10
     BASE_POINTS = 100
     STREAK_INCREMENT = 10
 
@@ -69,6 +69,41 @@ class TriviaGameService:
                 "answer_index": 1,
                 "difficulty": "easy",
                 "explanation": "CSS (Cascading Style Sheets) is used to style web pages.",
+            },
+            {
+                "question": "Which device is responsible for forwarding packets between networks?",
+                "choices": ["Switch", "Router", "Hub", "Repeater"],
+                "answer_index": 1,
+                "difficulty": "easy",
+                "explanation": "Routers connect different networks and forward packets between them.",
+            },
+            {
+                "question": "What is the smallest addressable unit of memory?",
+                "choices": ["Bit", "Byte", "Word", "Block"],
+                "answer_index": 1,
+                "difficulty": "easy",
+                "explanation": "A byte (8 bits) is the smallest addressable unit in most architectures.",
+            },
+            {
+                "question": "Which part of the OS is responsible for managing processes?",
+                "choices": ["Shell", "Kernel", "File System", "Device Driver"],
+                "answer_index": 1,
+                "difficulty": "medium",
+                "explanation": "The kernel manages processes, memory, and hardware resources.",
+            },
+            {
+                "question": "What is a common unit for CPU clock speed?",
+                "choices": ["Bytes per second", "Gigahertz", "Megabytes", "Nanoseconds"],
+                "answer_index": 1,
+                "difficulty": "easy",
+                "explanation": "CPU clocks are commonly measured in gigahertz (GHz).",
+            },
+            {
+                "question": "Which component typically stores the operating system during normal operation?",
+                "choices": ["CPU cache", "GPU", "Main memory (RAM)", "Secondary storage (SSD/HDD)"],
+                "answer_index": 3,
+                "difficulty": "medium",
+                "explanation": "The OS is stored on secondary storage and loaded into RAM when running.",
             },
         ],
         1: [  # Tuesday
@@ -122,6 +157,46 @@ class TriviaGameService:
                 "difficulty": "easy",
                 "explanation": "SQL stands for Structured Query Language.",
             },
+            {
+                "question": "Which SQL command is used to retrieve data?",
+                "choices": ["INSERT", "UPDATE", "SELECT", "DELETE"],
+                "answer_index": 2,
+                "difficulty": "easy",
+                "explanation": "SELECT is used to query and retrieve data.",
+            },
+            {
+                "question": "What is a primary key in a relational table?",
+                "choices": [
+                    "A column that can be null",
+                    "A unique identifier for each row",
+                    "A foreign key reference",
+                    "A text-only column",
+                ],
+                "answer_index": 1,
+                "difficulty": "medium",
+                "explanation": "A primary key uniquely identifies each row in a table.",
+            },
+            {
+                "question": "Which operation combines rows from two tables based on a related column?",
+                "choices": ["JOIN", "GROUP BY", "ORDER BY", "LIMIT"],
+                "answer_index": 0,
+                "difficulty": "medium",
+                "explanation": "JOIN combines rows from different tables based on a related column.",
+            },
+            {
+                "question": "In Git, which command uploads local commits to a remote repository?",
+                "choices": ["git pull", "git push", "git fetch", "git init"],
+                "answer_index": 1,
+                "difficulty": "easy",
+                "explanation": "git push sends your commits to a remote repository.",
+            },
+            {
+                "question": "Which HTTP method is typically used to create a new resource?",
+                "choices": ["GET", "POST", "PUT", "DELETE"],
+                "answer_index": 1,
+                "difficulty": "easy",
+                "explanation": "POST is commonly used to create new resources on the server.",
+            },
         ],
         2: [  # Wednesday
             {
@@ -164,6 +239,56 @@ class TriviaGameService:
                 "difficulty": "easy",
                 "explanation": "SMTP (Simple Mail Transfer Protocol) is used for sending email.",
             },
+            {
+                "question": "In OOP, what is 'inheritance'?",
+                "choices": [
+                    "Copying code between files",
+                    "Reusing interfaces only",
+                    "Creating new classes based on existing ones",
+                    "Sharing global variables",
+                ],
+                "answer_index": 2,
+                "difficulty": "medium",
+                "explanation": "Inheritance lets a class derive from another, reusing and extending behavior.",
+            },
+            {
+                "question": "What does 'polymorphism' allow in OOP?",
+                "choices": [
+                    "Multiple inheritance",
+                    "Different types to be treated through a common interface",
+                    "Copying objects",
+                    "Automatic memory management",
+                ],
+                "answer_index": 1,
+                "difficulty": "medium",
+                "explanation": "Polymorphism lets different types be used interchangeably via a common interface.",
+            },
+            {
+                "question": "Which keyword in many OOP languages refers to the current instance?",
+                "choices": ["self/this", "super", "base", "instance"],
+                "answer_index": 0,
+                "difficulty": "easy",
+                "explanation": "Most OOP languages use 'this' or 'self' for the current object.",
+            },
+            {
+                "question": "Which of these is an OOP principle?",
+                "choices": ["Compilation", "Encapsulation", "Refactoring", "Debugging"],
+                "answer_index": 1,
+                "difficulty": "easy",
+                "explanation": "Encapsulation is one of the core OOP principles.",
+            },
+            {
+                "question": "What is an 'abstract class'?",
+                "choices": [
+                    "A class with no methods",
+                    "A class with at least one abstract method and not directly instantiable",
+                    "A compiled class",
+                    "A class without inheritance",
+                ],
+                "answer_index": 1,
+                "difficulty": "medium",
+                "explanation": "Abstract classes define common behavior but aren't meant to be instantiated directly.",
+            },
         ],
         3: [  # Thursday
             {
@@ -205,6 +330,46 @@ class TriviaGameService:
                 "answer_index": 1,
                 "difficulty": "easy",
                 "explanation": "Firewalls control which network traffic is allowed or blocked.",
+            },
+            {
+                "question": "Which sorting algorithm has a guaranteed O(n log n) worst-case time?",
+                "choices": ["Quick Sort", "Merge Sort", "Insertion Sort", "Bubble Sort"],
+                "answer_index": 1,
+                "difficulty": "medium",
+                "explanation": "Merge Sort guarantees O(n log n) in the worst case.",
+            },
+            {
+                "question": "Which data structure is typically used to implement a priority queue?",
+                "choices": ["Stack", "Queue", "Heap", "ArrayList"],
+                "answer_index": 2,
+                "difficulty": "medium",
+                "explanation": "Heaps are commonly used to implement priority queues efficiently.",
+            },
+            {
+                "question": "Which type of cryptography uses a pair of public and private keys?",
+                "choices": ["Symmetric", "Asymmetric", "Hash-based", "Quantum"],
+                "answer_index": 1,
+                "difficulty": "medium",
+                "explanation": "Asymmetric cryptography uses a public/private key pair.",
+            },
+            {
+                "question": "What does TLS stand for?",
+                "choices": [
+                    "Transport Layer Security",
+                    "Transmission Link Service",
+                    "Trusted Login System",
+                    "Technical Layer Shield",
+                ],
+                "answer_index": 0,
+                "difficulty": "easy",
+                "explanation": "TLS stands for Transport Layer Security and secures network communication.",
+            },
+            {
+                "question": "Which protocol is commonly used for secure remote login?",
+                "choices": ["FTP", "SSH", "Telnet", "SNMP"],
+                "answer_index": 1,
+                "difficulty": "easy",
+                "explanation": "SSH (Secure Shell) is used for secure remote access.",
             },
         ],
         4: [  # Friday
@@ -258,6 +423,61 @@ class TriviaGameService:
                 "difficulty": "medium",
                 "explanation": "SHA-256 is a widely used cryptographic hash function.",
             },
+            {
+                "question": "Which vulnerability allows attackers to inject database queries via user input?",
+                "choices": ["XSS", "CSRF", "SQL Injection", "RCE"],
+                "answer_index": 2,
+                "difficulty": "medium",
+                "explanation": "SQL Injection lets attackers manipulate database queries.",
+            },
+            {
+                "question": "What does CSRF stand for?",
+                "choices": [
+                    "Cross-Site Request Forgery",
+                    "Cross-Site Resource Fetch",
+                    "Client-Side Request Filter",
+                    "Critical System Remote Function",
+                ],
+                "answer_index": 0,
+                "difficulty": "medium",
+                "explanation": "CSRF tricks a user’s browser into making unwanted requests.",
+            },
+            {
+                "question": "Which of the following is a good password hygiene practice?",
+                "choices": [
+                    "Reusing passwords",
+                    "Using short passwords",
+                    "Using a password manager",
+                    "Sharing passwords with colleagues",
+                ],
+                "answer_index": 2,
+                "difficulty": "easy",
+                "explanation": "Password managers help create and store strong unique passwords.",
+            },
+            {
+                "question": "What is '2FA' or 'MFA' primarily used for?",
+                "choices": [
+                    "Reducing storage usage",
+                    "Improving network speed",
+                    "Adding extra layers of authentication",
+                    "Encrypting databases",
+                ],
+                "answer_index": 2,
+                "difficulty": "easy",
+                "explanation": "Multi-factor authentication adds extra verification factors to logins.",
+            },
+            {
+                "question": "Which one is a common way malware spreads?",
+                "choices": [
+                    "Strong encryption",
+                    "Security patches",
+                    "Opening malicious email attachments",
+                    "Regular backups",
+                ],
+                "answer_index": 2,
+                "difficulty": "easy",
+                "explanation": "Malware often spreads through users opening malicious attachments or links.",
+            },
         ],
         5: [  # Saturday
             {
@@ -304,6 +524,51 @@ class TriviaGameService:
                 "answer_index": 0,
                 "difficulty": "easy",
                 "explanation": "npm install installs dependencies in a Node.js project.",
+            },
+            {
+                "question": "In RESTful APIs, which format is most commonly used for responses?",
+                "choices": ["XML only", "Binary", "JSON", "CSV"],
+                "answer_index": 2,
+                "difficulty": "easy",
+                "explanation": "JSON is the most common format for REST API responses.",
+            },
+            {
+                "question": "What does an HTTP 201 status code represent?",
+                "choices": ["OK", "Created", "No Content", "Bad Request"],
+                "answer_index": 1,
+                "difficulty": "easy",
+                "explanation": "201 Created is returned when a resource is successfully created.",
+            },
+            {
+                "question": "Which header is often used to send JSON in an HTTP request?",
+                "choices": [
+                    "Content-Type: application/json",
+                    "Accept-Encoding: gzip",
+                    "Authorization: Basic",
+                    "Cache-Control: no-cache",
+                ],
+                "answer_index": 0,
+                "difficulty": "easy",
+                "explanation": "Content-Type: application/json indicates a JSON request body.",
+            },
+            {
+                "question": "Which HTTP method is considered idempotent (in theory)?",
+                "choices": ["POST", "PATCH", "PUT", "CONNECT"],
+                "answer_index": 2,
+                "difficulty": "medium",
+                "explanation": "PUT is intended to be idempotent: multiple identical requests have the same effect.",
+            },
+            {
+                "question": "What does CORS stand for?",
+                "choices": [
+                    "Cross-Origin Resource Sharing",
+                    "Client-Origin Request System",
+                    "Centralized Origin Routing Service",
+                    "Cross-Organizational Resource Server",
+                ],
+                "answer_index": 0,
+                "difficulty": "medium",
+                "explanation": "CORS controls how resources can be requested from different origins.",
             },
         ],
         6: [  # Sunday
@@ -362,6 +627,61 @@ class TriviaGameService:
                 "difficulty": "medium",
                 "explanation": "Kubernetes automates deployment and management of containers.",
             },
+            {
+                "question": "What does 'scalability' mean in cloud computing?",
+                "choices": [
+                    "Encrypting data at rest",
+                    "The ability to handle increased load by adding resources",
+                    "Using only local servers",
+                    "Compressing network traffic",
+                ],
+                "answer_index": 1,
+                "difficulty": "easy",
+                "explanation": "Scalability is about handling more load by increasing resources.",
+            },
+            {
+                "question": "Which provider is NOT a major cloud platform?",
+                "choices": ["AWS", "Azure", "GCP", "MySQL"],
+                "answer_index": 3,
+                "difficulty": "easy",
+                "explanation": "MySQL is a database, not a cloud provider.",
+            },
+            {
+                "question": "What is 'serverless' computing?",
+                "choices": [
+                    "Computing without physical servers",
+                    "Cloud functions where infrastructure is managed by the provider",
+                    "Only using client-side code",
+                    "Using bare-metal servers",
+                ],
+                "answer_index": 1,
+                "difficulty": "medium",
+                "explanation": "Serverless means you deploy code without managing servers yourself.",
+            },
+            {
+                "question": "What does 'multi-region deployment' help with?",
+                "choices": [
+                    "Code readability",
+                    "Latency and fault tolerance",
+                    "Unit testing",
+                    "CI/CD speed",
+                ],
+                "answer_index": 1,
+                "difficulty": "medium",
+                "explanation": "Deploying in multiple regions improves latency and resilience.",
+            },
+            {
+                "question": "What does 'pay-as-you-go' pricing mean in cloud platforms?",
+                "choices": [
+                    "Flat monthly fees only",
+                    "Paying only for resources you actually consume",
+                    "Paying yearly for all resources",
+                    "Paying only for storage",
+                ],
+                "answer_index": 1,
+                "difficulty": "easy",
+                "explanation": "Pay-as-you-go means you are billed based on actual resource usage.",
+            },
         ],
     }
 
@@ -371,7 +691,7 @@ class TriviaGameService:
         self.leaderboard = leaderboard
         self.active_sessions = _ACTIVE_SESSIONS
 
-        # Max possible score for a perfect game (5 correct in a row)
+        # Max possible score for a perfect game (10 correct in a row)
         base = self.LEVELS * self.BASE_POINTS
         bonus = self.STREAK_INCREMENT * ((self.LEVELS - 1) * self.LEVELS // 2)
         self.max_score = base + bonus
@@ -487,7 +807,6 @@ class TriviaGameService:
         else:
             # wrong answer breaks the streak
             session["streak"] = 0
-        # -----------------------------------
 
         # Move to next question
         session["index"] += 1

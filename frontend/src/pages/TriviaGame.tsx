@@ -223,7 +223,7 @@ export default function TriviaGame() {
           <div className="bg-green-100 p-6 rounded-lg mb-8">
             <h3 className="text-xl font-bold mb-4">How To Play:</h3>
             <ol className="text-left space-y-2">
-              <li>1. You&apos;ll get 5 multiple-choice questions.</li>
+              <li>1. You&apos;ll get 10 multiple-choice questions.</li>
               <li>2. Each correct answer is worth 100 points.</li>
               <li>
                 3. Streak bonus: +10 per streak level (2 in a row = +10, 3 in a
@@ -421,7 +421,7 @@ export default function TriviaGame() {
           <div className="space-x-4">
             {user && (
               <button
-                onClick={() => window.location.href = 'http://localhost:8000'}
+                onClick={() => (window.location.href = "http://localhost:8000")}
                 className="px-8 py-3 bg-blue-600 text-white rounded-lg text-lg hover:bg-blue-700"
               >
                 View Leaderboards
