@@ -38,6 +38,23 @@ button {
   background-color: #b9c6ff;
 }
 
+#inactive-table {
+  width: 80%;
+  margin: 20px auto;
+  border-collapse: collapse; /* Makes borders clean */
+}
+
+#inactive-table th,
+#inactive-table td {
+  padding: 10px;
+  border: 1px solid #f76e6a;
+  text-align: center;
+}
+
+#inactive-table th {
+  background-color: #b71b0d;
+}
+
 #main-menu-screen {
   display: flex;
   background-color: #ff8989;

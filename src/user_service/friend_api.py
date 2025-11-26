@@ -44,7 +44,7 @@ async def require_auth_user(
 
     return sub_id
 
-@router.get("/{user_id}/friend-requests/", status_code=200, dependencies=[Depends(check_rate_limiter)]) #Get unanswered requests made to/by a user
+@router.get("/{user_id}/friend-requests/", status_code=200) #Get unanswered requests made to/by a user
 async def list_friend_requests(
     user_id: int,
     q: Literal["incoming", "outgoing"] = Query(...),
@@ -63,7 +63,7 @@ async def list_friend_requests(
         for fr in rows
     ]
 
-@router.post("/{user_id}/friend-requests/", status_code=201, dependencies=[Depends(check_rate_limiter)]) #Create a request
+@router.post("/{user_id}/friend-requests/", status_code=201) #Create a request
 async def create_friend_request(
     user_id: int,
     body: SendRequestBody,
@@ -78,7 +78,7 @@ async def create_friend_request(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.put("/{user_id}/friend-requests/{other_id}/", dependencies=[Depends(check_rate_limiter)]) #Update a request
+@router.put("/{user_id}/friend-requests/{other_id}/") #Update a request
 async def update_request_as_requestee(
     user_id: int,
     other_id: int,
@@ -91,7 +91,7 @@ async def update_request_as_requestee(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-@router.delete("/{user_id}/friend-requests/{other_id}/", dependencies=[Depends(check_rate_limiter)]) #Delete a request
+@router.delete("/{user_id}/friend-requests/{other_id}/") #Delete a request
 async def delete_request_as_requester(
     user_id: int,
     other_id: int,
@@ -106,7 +106,7 @@ async def delete_request_as_requester(
 
 # Finished friend request, now switch to friendship
 
-@router.get("/{user_id}/friends", dependencies=[Depends(check_rate_limiter)]) #View friend list
+@router.get("/{user_id}/friends") #View friend list
 async def list_friend(
     user_id: int,
     repo: FriendRepository = Depends(get_friend_repository),
@@ -117,7 +117,7 @@ async def list_friend(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-@router.get("/{user_id}/friends/{friend_id_or_name}", dependencies=[Depends(check_rate_limiter)]) #Get friend by name/id
+@router.get("/{user_id}/friends/{friend_id_or_name}") #Get friend by name/id
 async def get_friend_by_id_or_name(
     user_id: int,
     friend_id_or_name: str,  # could be name or id
@@ -133,7 +133,7 @@ async def get_friend_by_id_or_name(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-@router.delete("/{user_id}/friends/{friend_id_or_name}", dependencies=[Depends(check_rate_limiter)]) #Delete friend by name/id
+@router.delete("/{user_id}/friends/{friend_id_or_name}") #Delete friend by name/id
 async def delete_friendship_by_id_or_name(
     user_id: int,
     friend_id_or_name: str,
@@ -150,3 +150,5 @@ async def delete_friendship_by_id_or_name(
         return {"ok": True, "message": "Deleted successfully, both are no longer friends"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+# dependency for rlt: , dependencies=[Depends(check_rate_limiter)]
