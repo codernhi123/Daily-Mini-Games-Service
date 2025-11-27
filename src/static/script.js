@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Get the content display areas
     const leaderboardBody = document.getElementById('leaderboard-body');
     const headerText = document.getElementById('header-text');
+    const inactiveBody = document.getElementById('inactive-body')
 
     // Get current stat
     const now = new Date();
@@ -45,6 +46,43 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Could not get User ID:", error);
             return null;
         }
+    }
+
+    async function fetchInactiveData(user_id, game_name, when) {
+        inactiveBody.innerHTML = '<tr><td colspan="2">Loading...</td></tr>';
+
+        let apiUrl = '';
+        apiUrl = `/leaderboard/inactive/${user_id}/${game_name}/${when}`;
+
+        try {
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            const users = await response.json();
+            renderInactive(users);
+        } catch (error) {
+            console.error('Failed to fetch inactive friends:', error);
+            if (user_id != null) 
+                inactiveBody.innerHTML = '<tr><td colspan="2">Failed to load</td></tr>';
+            else 
+                inactiveBody.innerHTML = '<tr><td colspan="2">Login to see who has not played</td></tr>';
+        }
+    }
+
+    function renderInactive(users) {
+        inactiveBody.innerHTML = '';
+
+        if (users.length === 0) {
+            inactiveBody.innerHTML = '<tr><td colspan="2">No one has not played yet!</td></tr>';
+            return;
+        }
+
+        users.forEach(element => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td colspan="2">${element.user_id}</td>`;
+            inactiveBody.appendChild(row);
+        });
     }
 
     async function fetchLeaderboardData(type, user_id, game_name, when) {
@@ -117,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const user_id = await getMyId();
         fetchLeaderboardData(currentLeaderboardType, user_id, currentLeaderboardGame, when);
+        fetchInactiveData(user_id, currentLeaderboardGame, when);
     });
 
     leaderboardBackBtn.addEventListener('click', () => {
@@ -130,6 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateToggleButtons();
             const user_id = await getMyId();
             fetchLeaderboardData(currentLeaderboardType, user_id, currentLeaderboardGame, when);
+            fetchInactiveData(user_id, currentLeaderboardGame, when);
         }
     });
 
@@ -139,6 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateToggleButtons();
             const user_id = await getMyId();
             fetchLeaderboardData(currentLeaderboardType, user_id, currentLeaderboardGame, when);
+            fetchInactiveData(user_id, currentLeaderboardGame, when);
         }
     });
 
@@ -148,6 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateToggleButtons();
             const user_id = await getMyId();
             fetchLeaderboardData(currentLeaderboardType, user_id, currentLeaderboardGame, when);
+            fetchInactiveData(user_id, currentLeaderboardGame, when);
         }
     });
 
@@ -157,6 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateToggleButtons();
             const user_id = await getMyId();
             fetchLeaderboardData(currentLeaderboardType, user_id, currentLeaderboardGame, when);
+            fetchInactiveData(user_id, currentLeaderboardGame, when);
         }
     });
 

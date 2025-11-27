@@ -68,6 +68,15 @@ class LeaderboardRepository:
         ).order_by(Leaderboard.scores.desc())
 
         return self.session.execute(stmt).scalars().all()
+    
+    async def view_inactive_scores(self, user_id: int, game_name: str, current_date: datetime, repo: FriendRepository):
+        self._delete_expired_data(game_name, current_date)
+        all_friends_id = await repo.list_friends(user_id)
+        active_stmt = await self.view_friend_scores(user_id, game_name, current_date, repo)
+        active_friends_id = {entry.user_id for entry in active_stmt}
+
+        inactive_friends_id = [f_id for f_id in all_friends_id if f_id not in active_friends_id]
+        return inactive_friends_id
 
     async def update_scores(self, user_id: int, user_name: str, scores: int, game_name: str, current_date: datetime, next_date: datetime):
         self._delete_expired_data(game_name, current_date)
