@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, List, Any
+from user_service.models.event import EventSchemaCreate
 
 _ACTIVE_SESSIONS: Dict[str, Dict[str, Any]] = {}
 
@@ -685,10 +686,11 @@ class TriviaGameService:
         ],
     }
 
-    def __init__(self, game_state, game_history, leaderboard):
+    def __init__(self, game_state, game_history, leaderboard, event_repo = None):
         self.game_state = game_state
         self.game_history = game_history
         self.leaderboard = leaderboard
+        self.event_repo = event_repo
         self.active_sessions = _ACTIVE_SESSIONS
 
         # Max possible score for a perfect game (10 correct in a row)
@@ -859,8 +861,21 @@ class TriviaGameService:
             await self.game_state.update_state(id, "Trivia", now, next_midnight)
             await self.game_history.add_entry(id, "Trivia", final_score, now)
             await self.leaderboard.update_scores(
-                id, player_name, final_score, "Trivia", now, now
+                id, player_name, final_score, "Trivia", now, next_midnight
             )
+            if self.event_repo:
+                await self.event_repo.create(EventSchemaCreate(
+                        when=datetime.now(timezone.utc),
+                        source="trivia_game",
+                        type="game_complete",
+                        user=str(id),
+                        payload={
+                            "streak": session.get("streak", 0),
+                            "best_streak": best_streak,
+                            "score": final_score
+                            }
+                    ))
+
 
         del self.active_sessions[session_id]
 

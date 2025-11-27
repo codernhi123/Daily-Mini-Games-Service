@@ -7,6 +7,8 @@ from user_service.game_state import get_game_state, GameState
 from user_service.game_history import get_game_history, GameHistory
 from user_service.models.leaderboard import get_leaderboard_repository, LeaderboardRepository
 from user_service.models.user import UserRepository, get_user_repository
+from user_service.models.event import EventRepository, get_event_repository, EventSchemaCreate
+from datetime import datetime, timezone
 
 router = APIRouter(prefix="/v2/games/memory", tags=["memory-game"])
 
@@ -25,9 +27,10 @@ router = APIRouter(prefix="/v2/games/memory", tags=["memory-game"])
 def get_memory_service(
     game_state: GameState = Depends(get_game_state),
     game_history: GameHistory = Depends(get_game_history),
-    leaderboard: LeaderboardRepository = Depends(get_leaderboard_repository)
+    leaderboard: LeaderboardRepository = Depends(get_leaderboard_repository),
+    event_repo: EventRepository = Depends(get_event_repository)
 ) -> MemoryGameService:
-    return MemoryGameService(game_state, game_history, leaderboard)
+    return MemoryGameService(game_state, game_history, leaderboard, event_repo)
 
 class AnswerSubmission(BaseModel):
     session_id: str
@@ -38,7 +41,8 @@ async def start_memory_game(
     request: Request, 
     user_id: Optional[int] = None, 
     service: MemoryGameService = Depends(get_memory_service),
-    user_repo: UserRepository = Depends(get_user_repository)
+    user_repo: UserRepository = Depends(get_user_repository),
+    event_repo: EventRepository = Depends(get_event_repository)
     ):
     try:
         token = request.cookies.get("jwt")
@@ -48,7 +52,15 @@ async def start_memory_game(
                 user_id = int(payload["sub"])
             except ValueError:
                 pass  # Invalid/expired token, continue as guest
-        
+
+        await  event_repo.create(EventSchemaCreate(
+            when=datetime.now(timezone.utc),
+            source="memory_game",
+            type="game_start",
+            user=str(user_id) if user_id else None,
+            payload={}
+        ))
+
         user_name = None
         if user_id:
             user = await user_repo.get_by_id(user_id)
@@ -74,6 +86,18 @@ async def display_images(session_id: str, service: MemoryGameService = Depends(g
 async def submit_answer(submission: AnswerSubmission, service: MemoryGameService = Depends(get_memory_service)):
     try:
         result = await service.submit_answer(submission.session_id, submission.answer)
+
+        # if result.get("game_over"):
+        #     session = service.active_sessions.get(submission.session_id)
+        #     if session and session.get("id"):
+        #         await  event_repo.create(EventSchemaCreate(
+        #             when=datetime.now(timezone.utc),
+        #             source="memory_game",
+        #             type="game_complete",
+        #             user=str(session["id"]),
+        #             payload={"score": result.get("final_score", 0)}
+        #         ))
+
         return result
     except ValueError as e:
         raise HTTPException(status_code = 404, detail = str(e))
