@@ -395,6 +395,48 @@ async def analytics(
     return await day_report(target)
 
 
+@app.get("/v2/analytics/streaks", dependencies=[Depends(check_rate_limiter)])
+async def streak_analytics(
+    on: str | None = Query(default=None, description="YYYY-MM-DD"),
+    repo: EventRepository = Depends(get_event_repository)
+):
+    def parse_day(s: str) -> date:
+        return datetime.strptime(s, "%Y-%m-%d").date() 
+    
+    target = parse_day(on) if on else datetime.now().date()
+    start = datetime.combine(target, datetime.min.time())
+    end = datetime.combine(target, datetime.max.time())
+
+    query = EventQuery(
+        source="trivia_game",
+        after=start,
+        before=end
+    )
+    events = await repo.query(query)
+
+    streaks = []
+    best_streaks = []
+
+    for e in events:
+        if e.type == "game_complete" and e.payload:
+            streak = e.payload.get("streak", 0)
+            best_streak = e.payload.get("best_streak", 0)
+            streaks.append(streak)
+            best_streaks.append(best_streak)
+
+    total_games = len(streaks)
+
+    return {
+        "date": target.isoformat(),
+        "total_games_completed": total_games,
+        "avgerage_final_streak": round(sum(streaks)/total_games, 1) if total_games > 0 else 0,
+        "avgerage_best_streak": round(sum(best_streaks)/total_games, 1) if total_games > 0 else 0,
+        "max_streak_today": max(best_streaks) if best_streaks else 0,
+        "perfect_streak": len([s for s in streaks if s == 10])
+
+    }
+
+
 ui.run_with(
     app,
     mount_path="/admin",

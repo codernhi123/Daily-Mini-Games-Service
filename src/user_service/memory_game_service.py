@@ -2,6 +2,7 @@ import random
 import uuid
 from datetime import datetime, timezone, timedelta, date
 from typing import Optional, Dict, List, Any
+from user_service.models.event import EventSchemaCreate
 
 _ACTIVE_SESSIONS: Dict[str, Dict[str, Any]] = {}
 
@@ -52,10 +53,11 @@ class MemoryGameService:
         },
     }
 
-    def __init__(self, game_state, game_history, leaderboard):
+    def __init__(self, game_state, game_history, leaderboard, event_repo = None):
         self.game_state = game_state
         self.game_history = game_history
         self.leaderboard = leaderboard
+        self.event_repo = event_repo
         self.active_sessions = _ACTIVE_SESSIONS
 
     @staticmethod
@@ -255,6 +257,15 @@ class MemoryGameService:
             # Leaderboard wants the current time in UTC
             await self.leaderboard.update_scores(id, player_name, final_score, "Memory", now, next_midnight)
             # await self.leaderboard.update_scores(id, user_name, final_score, "Memory", now, next_midnight)
+
+            if self.event_repo:
+                await self.event_repo.create(EventSchemaCreate(
+                        when=now,
+                        source="memory_game",
+                        type="game_complete",
+                        user=str(id),
+                        payload={"score": final_score}
+                    ))
 
         del self.active_sessions[session_id]
 
