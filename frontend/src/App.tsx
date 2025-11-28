@@ -137,7 +137,7 @@ function Home() {
             <button
               type="button"
               className="p-2 bg-green-600 text-white rounded hover:bg-green-700 mt-2"
-              onClick={() => (window.location.href = "http://localhost:8000/create")}>
+              onClick={() => (window.location.href = "http://localhost:8000/profile/create")}>
               Create User
             </button>
           </form>
@@ -190,7 +190,7 @@ function Home() {
           </a>
 
           <a
-            href="http://localhost:8000/friends"
+            href="http://localhost:8000/profile/friends"
             className="w-64 whitespace-nowrap px-8 py-4 bg-sky-400 text-white rounded-lg text-xl font-semibold text-center hover:bg-sky-400"
           >
             Manage Friends
