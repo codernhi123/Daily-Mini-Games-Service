@@ -134,6 +134,12 @@ function Home() {
             <button className="p-2 bg-blue-600 text-white rounded hover:bg-blue-700">
               Log In
             </button>
+            <button
+              type="button"
+              className="p-2 bg-green-600 text-white rounded hover:bg-green-700 mt-2"
+              onClick={() => (window.location.href = "http://localhost:8000/create")}>
+              Create User
+            </button>
           </form>
         ) : (
           <div className="mb-10 text-center">
@@ -181,6 +187,13 @@ function Home() {
             className="w-64 whitespace-nowrap px-8 py-4 bg-purple-600 text-white rounded-lg text-xl font-semibold text-center hover:bg-purple-700"
           >
             View Leaderboard
+          </a>
+
+          <a
+            href="http://localhost:8000/friends"
+            className="w-64 whitespace-nowrap px-8 py-4 bg-sky-400 text-white rounded-lg text-xl font-semibold text-center hover:bg-sky-400"
+          >
+            Manage Friends
           </a>
           
         </div>
