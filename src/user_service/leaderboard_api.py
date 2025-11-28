@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, APIRouter
+from fastapi import Depends, APIRouter
 from datetime import datetime
 #from .models.rate_limiter import check_rate_limiter
 #from user_service.auth.jwt_helper import validate_jwt
@@ -56,18 +56,18 @@ async def get_inactive_leaderboard(
         for qr in rows
     ]
 
-@router.post("/update-leader-board/", status_code=200)
-async def update_leader_board(
-    user_id: int,
-    user_name: str,
-    game_name: str,
-    scores: int,
-    when: datetime,
-    next_date: datetime,
-    repo: LeaderboardRepository = Depends(get_leaderboard_repository)
-):
-    try:
-        await repo.update_scores(user_id, user_name, scores, game_name, when, next_date)
-        return {"ok": True, "message": "Updated latest scores successfully"}
-    except Exception as e:
-        raise HTTPException(status_code = 400, detail=str(e))
+# @router.post("/update-leader-board/", status_code=200)
+# async def update_leader_board(
+#     user_id: int,
+#     user_name: str,
+#     game_name: str,
+#     scores: int,
+#     when: datetime,
+#     next_date: datetime,
+#     repo: LeaderboardRepository = Depends(get_leaderboard_repository)
+# ):
+#     try:
+#         await repo.update_scores(user_id, user_name, scores, game_name, when, next_date)
+#         return {"ok": True, "message": "Updated latest scores successfully"}
+#     except Exception as e:
+#         raise HTTPException(status_code = 400, detail=str(e))
