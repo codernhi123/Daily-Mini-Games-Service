@@ -11,12 +11,64 @@ type CanPlayResponse = {
   message?: string;
 };
 
+type GameHistory = {
+  id: number;
+  game_type: string;
+  score: number;
+  played_at: string;
+};
+
+const HistoryTable = ({ title, data }: { title: string; data: GameHistory[] }) => {
+  return (
+    <div className="bg-white shadow rounded-lg p-6">
+      <h3 className="text-2xl font-semibold mb-4">{title}</h3>
+      {data.length === 0 ? (
+        <p className="text-gray-500 italic">No game history found.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Score
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {data.map((record) => (
+                <tr key={record.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {new Date(record.played_at).toLocaleDateString()} at{" "}
+                    {new Date(record.played_at).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-600">
+                    {record.score}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function GameStats() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
   const [memoryState, setMemoryState] = useState<CanPlayResponse | null>(null);
   const [triviaState, setTriviaState] = useState<CanPlayResponse | null>(null);
+  const [memoryHistory, setMemoryHistory] = useState<GameHistory[]>([]);
+  const [triviaHistory, setTriviaHistory] = useState<GameHistory[]>([]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,17 +81,25 @@ export default function GameStats() {
         setLoading(true);
         setError(null);
 
-        const [memRes, trivRes] = await Promise.all([
+        const [memRes, trivRes, memHistRes, trivHistRes] = await Promise.all([
           api.get<CanPlayResponse>(
             `/v2/games/memory/can_play/${user.id}`
           ),
           api.get<CanPlayResponse>(
             `/v2/games/trivia/can_play/${user.id}`
           ),
+          api.get<GameHistory[]>(
+            `/v2/games/memory/history/${user.id}`
+          ),
+          api.get<GameHistory[]>(
+            `/v2/games/trivia/history/${user.id}`
+          ),
         ]);
 
         setMemoryState(memRes.data);
         setTriviaState(trivRes.data);
+        setMemoryHistory(memHistRes.data);
+        setTriviaHistory(trivHistRes.data);
       } catch (err: any) {
         console.error("Failed to load game state", err);
         setError(
@@ -88,6 +148,41 @@ export default function GameStats() {
           See whether you can play each game today and when you&apos;ll be able
           to play again.
         </p>
+
+        {/* Prompt the user to play if they haven't played yet today */}
+        {!loading && !error && (memoryState?.can_play || triviaState?.can_play) && (
+          <div className="mb-6 rounded-lg border border-indigo-300 bg-indigo-50 p-4 text-indigo-900">
+            <p className="font-semibold mb-1">
+              You haven&apos;t played today yet!
+            </p>
+            <p className="text-sm mb-3">
+              {memoryState?.can_play && triviaState?.can_play
+                ? "Play a round of Memory and Trivia to log today’s scores."
+                : memoryState?.can_play
+                ? "Play a round of Memory to log today’s score."
+                : "Play a round of Trivia to log today’s score."}
+            </p>
+
+            <div className="flex flex-wrap gap-2">
+              {memoryState?.can_play && (
+                <button
+                  onClick={() => navigate("/memory-game")}
+                  className="px-4 py-2 rounded bg-pink-600 text-white text-sm font-semibold hover:bg-pink-700"
+                >
+                  Play Memory Game
+                </button>
+              )}
+              {triviaState?.can_play && (
+                <button
+                  onClick={() => navigate("/trivia-game")}
+                  className="px-4 py-2 rounded bg-green-600 text-white text-sm font-semibold hover:bg-green-700"
+                >
+                  Play Trivia Game
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {loading && (
           <div className="text-center text-gray-600">Loading stats...</div>
@@ -188,17 +283,9 @@ export default function GameStats() {
         </div>
 
         {/* History placeholder */}
-        <div className="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-6">
-          <h3 className="text-xl font-semibold mb-2">
-            Play History (Coming from backend)
-          </h3>
-          <p className="text-gray-600">
-            Backend already stores history in <code>game_history</code>. Once an
-            API endpoint is exposed (e.g.{" "}
-            <code>/v2/games/history/&lt;game_type&gt;?days=30</code>) we can
-            show your last 30 days of scores here.
-          </p>
-        </div>
+        <HistoryTable title="Memory Game History" data={memoryHistory} />
+        <HistoryTable title="Trivia Game History" data={triviaHistory} />
+
       </div>
     </GameLayout>
   );
