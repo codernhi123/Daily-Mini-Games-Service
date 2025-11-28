@@ -45,7 +45,7 @@ class LeaderboardRepository:
                 func.date(Leaderboard.when) == current_date.date(), 
                 Leaderboard.game_name == game_name
             )
-        ).order_by(Leaderboard.scores.desc())
+        ).order_by(Leaderboard.scores.desc()).limit(10)
         
         return self.session.execute(stmt).scalars().all()
 
