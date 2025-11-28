@@ -112,4 +112,11 @@ async def check_can_play(id: int, service: MemoryGameService = Depends(get_memor
     except Exception as e:
         raise HTTPException(status_code = 500, detail = str(e))
 
+@router.get("/history/{id}")
+async def get_history(id: int, game_type: str = "Memory", repo: GameHistory = Depends(get_game_history)):
+    try:
+        history = await repo.get_history_for_user(id, game_type, 30)
+        return history
+    except Exception as e:
+        raise HTTPException(status_code = 500, detail = str(e))
 
