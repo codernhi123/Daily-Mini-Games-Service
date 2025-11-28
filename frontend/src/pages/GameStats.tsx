@@ -149,6 +149,41 @@ export default function GameStats() {
           to play again.
         </p>
 
+        {/* Prompt the user to play if they haven't played yet today */}
+        {!loading && !error && (memoryState?.can_play || triviaState?.can_play) && (
+          <div className="mb-6 rounded-lg border border-indigo-300 bg-indigo-50 p-4 text-indigo-900">
+            <p className="font-semibold mb-1">
+              You haven&apos;t played today yet!
+            </p>
+            <p className="text-sm mb-3">
+              {memoryState?.can_play && triviaState?.can_play
+                ? "Play a round of Memory and Trivia to log today’s scores."
+                : memoryState?.can_play
+                ? "Play a round of Memory to log today’s score."
+                : "Play a round of Trivia to log today’s score."}
+            </p>
+
+            <div className="flex flex-wrap gap-2">
+              {memoryState?.can_play && (
+                <button
+                  onClick={() => navigate("/memory-game")}
+                  className="px-4 py-2 rounded bg-pink-600 text-white text-sm font-semibold hover:bg-pink-700"
+                >
+                  Play Memory Game
+                </button>
+              )}
+              {triviaState?.can_play && (
+                <button
+                  onClick={() => navigate("/trivia-game")}
+                  className="px-4 py-2 rounded bg-green-600 text-white text-sm font-semibold hover:bg-green-700"
+                >
+                  Play Trivia Game
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {loading && (
           <div className="text-center text-gray-600">Loading stats...</div>
         )}
