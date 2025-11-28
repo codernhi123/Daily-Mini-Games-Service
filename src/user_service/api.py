@@ -439,7 +439,7 @@ async def streak_analytics(
 
 ui.run_with(
     app,
-    mount_path="/",
+    mount_path="/admin",
     favicon="👤",
     title="User Admin",
     storage_secret=os.getenv('STORAGE_SECRET'),

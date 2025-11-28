@@ -125,7 +125,7 @@ def test_delete_authentication(client):
 
     response3 = client.request(
         "DELETE",
-        "/v2/authentications",
+        "/v2/authentications/",
         json={"jwt": token}
     )
 
@@ -152,7 +152,7 @@ def test_delete_authentication_expired_token(client):
     expired = create_access_token(3, expired_fifty_token)
     response3 = client.request(
         "DELETE",
-        "/v2/authentications",
+        "/v2/authentications/",
         json={"jwt": expired}
     )
 
