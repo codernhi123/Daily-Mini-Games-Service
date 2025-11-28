@@ -182,7 +182,7 @@ export function MemoryGame() {
 
 	if (gameState === 'locked') {
 		return (
-			<GameLayout title="Memory Challenge" onExit={() => navigate('/')}>
+			<GameLayout title="Memory Challenge" onExit={() => navigate('/')} userId={user?.name}>
 				<div className='text-center'>
 					<h2 className='text-3xl font-bold mb-4'>Already Played Today!</h2>
 					<p className='text-xl mb-4'>{feedback}</p> 
