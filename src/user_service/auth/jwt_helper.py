@@ -1,9 +1,26 @@
+import base64
 from datetime import datetime, timedelta, timezone
+import os
 from authlib.jose import jwt, JoseError
+from dotenv import load_dotenv
 
 DEFAULT_ACCESS_TOKEN_EXPIRE_MINUTES = 60 
-with open('./keys/private.pem', "rb") as f:
-    PRIVATE_KEY = f.read()
+
+load_dotenv()
+
+def get_private_key():
+    try:
+        b64_key = os.getenv("JWT_PRIVATE_KEY")
+        if not b64_key:
+            raise ValueError("JWT_PRIVATE_KEY is missing from environment")
+        private_key_bytes = base64.b64decode(b64_key)
+        return private_key_bytes
+
+    except Exception as e:
+        print(f"Error loading private key: {e}")
+        raise
+
+PRIVATE_KEY = get_private_key()
 
 with open('./keys/public.pem', "rb") as f:
     PUBLIC_KEY = f.read()
