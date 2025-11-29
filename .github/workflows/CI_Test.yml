@@ -3,27 +3,34 @@ name: CI
 on:
   push:
     branches:
-        - main
+      - main
   pull_request:
     branches:
-        - main
+      - main
 
 jobs:
   test_and_lint:
     runs-on: ubuntu-latest
-    env:
-      POSTGRES_HOST: db
-      POSTGRES_USER: Group14
-      POSTGRES_PASSWORD: Group14
-
     name: CI workflow
+    
     steps:
       - uses: actions/checkout@v3
+      
+      - name: Create .env file from Secrets
+        run: |
+          echo "POSTGRES_HOST=db" >> .env
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
+          echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" >> .env
+          echo "STORAGE_SECRET=${{ secrets.STORAGE_SECRET }}" >> .env
+          echo "JWT_PRIVATE_KEY=${{ secrets.JWT_PRIVATE_KEY }}" >> .env
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      - run: python -m pip install --upgrade pip  
+      - run: python -m pip install --upgrade pip   
       
       - name: Set up docker container
         run: docker compose up -d --build
@@ -41,6 +48,4 @@ jobs:
         if: failure()
         run: |
           docker compose logs web
-
-
-
+          docker compose logs db
