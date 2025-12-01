@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     startGameBtn.addEventListener('click', () => {
-        window.location.href = 'http://localhost:5173';
+        window.location.href = 'https://game-frontend-mwlw.onrender.com/';
     });
 
     viewLeaderboardBtn.addEventListener('click', async () => {

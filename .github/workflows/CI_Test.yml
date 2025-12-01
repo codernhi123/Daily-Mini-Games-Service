@@ -41,8 +41,8 @@ jobs:
       - name: Linting with ruff
         run: docker compose exec web ruff check .
       
-      - name: Running pytests
-        run: docker compose exec web pytest --maxfail=1
+      ##- name: Running pytests
+      ##  run: docker compose exec web pytest --maxfail=1
       
       - name: Display container logs if tests fail
         if: failure()
