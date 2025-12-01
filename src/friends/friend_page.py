@@ -61,7 +61,7 @@ async def friends_page(request: Request, user_repo: UserRepository = Depends(get
         ui.label('Log in on the home page to access the friends system.').classes('text-red-500 text-xl')
         ui.button(
         'Return to Homepage',
-        on_click=lambda: ui.run_javascript("window.location.href='http://localhost:5173';")
+        on_click=lambda: ui.run_javascript("window.location.href='https://game-frontend-mwlw.onrender.com/';")
         ).props('color=secondary')
         return
     
@@ -178,7 +178,7 @@ async def friends_page(request: Request, user_repo: UserRepository = Depends(get
 
     with ui.row().classes('gap-2'):
         ui.button('Refresh friends', on_click=load_friends)
-        ui.button('Return to Homepage', on_click=lambda: ui.run_javascript("window.location.href='http://localhost:5173';")).props('color=secondary')
+        ui.button('Return to Homepage', on_click=lambda: ui.run_javascript("window.location.href='https://game-frontend-mwlw.onrender.com/';")).props('color=secondary')
 
     ui.timer(0.1, load_pending, once=True)
     ui.timer(0.1, load_friends, once=True)
