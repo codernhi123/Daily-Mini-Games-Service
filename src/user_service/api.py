@@ -182,7 +182,7 @@ async def become_authenticated(
         value=access_token,
         httponly=True,
         secure=False,  # False for localhost, True for production HTTPS
-        samesite="lax",
+        samesite="None",
         max_age=max_age_seconds,
         path="/"
     )
@@ -194,7 +194,7 @@ async def logout(response: Response):
     response.delete_cookie(
         key="jwt",
         path="/",
-        samesite="lax",
+        samesite="None",
         httponly=True,     # optional but safe
         secure=False       # match login
     )
