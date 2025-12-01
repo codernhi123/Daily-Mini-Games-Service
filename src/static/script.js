@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
         inactiveBody.innerHTML = '';
 
         if (users.length === 0) {
-            inactiveBody.innerHTML = '<tr><td colspan="2">No available friend has missed their game!</td></tr>';
+            inactiveBody.innerHTML = '<tr><td colspan="2">No available friends have missed their game!</td></tr>';
             return;
         }
 
