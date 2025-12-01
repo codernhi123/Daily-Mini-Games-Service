@@ -181,7 +181,7 @@ async def become_authenticated(
         key="jwt",
         value=access_token,
         httponly=True,
-        secure=False,  # False for localhost, True for production HTTPS
+        secure=True,  # False for localhost, True for production HTTPS
         samesite="None",
         max_age=max_age_seconds,
         path="/"
@@ -196,7 +196,7 @@ async def logout(response: Response):
         path="/",
         samesite="None",
         httponly=True,     # optional but safe
-        secure=False       # match login
+        secure=True       # match login
     )
     return {"message": "Logged out"}
 
