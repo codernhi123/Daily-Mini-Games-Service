@@ -45,9 +45,14 @@ load_dotenv()
 
 logger = logging.getLogger('uvicorn.error')
 app = FastAPI()
+origins = [
+    "http://localhost:5173",                      # Trusted: Your laptop (Local Dev)
+    "https://game-frontend-mwlw.onrender.com"     # Trusted: Your Live Game (Production)
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[origins],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
