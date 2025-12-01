@@ -5,7 +5,7 @@ from fastapi import Request, Depends
 import httpx
 from user_service.models.user import UserRepository, get_user_repository
 
-API_BASE = os.getenv('FRIENDS_API_BASE', 'http://localhost:8000')
+API_BASE = os.getenv('FRIENDS_API_BASE', 'https://user-service-lxv0.onrender.com')
 
 FRIENDS_URL = f"{API_BASE}/v2/users"
 
