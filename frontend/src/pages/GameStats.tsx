@@ -52,11 +52,12 @@ const HistoryTable = ({ title, data }: { title: string; data: GameHistory[] }) =
                 return (
                   <tr key={record.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {d.toLocaleDateString()}{" "}
+                      {d.toLocaleDateString(undefined, { timeZone: "UTC" })}{" "}
                       at{" "}
-                      {d.toLocaleTimeString([], {
+                      {d.toLocaleTimeString(undefined, {
                         hour: "2-digit",
                         minute: "2-digit",
+                        timeZone: "UTC",
                       })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-600">
@@ -84,22 +85,26 @@ function buildConsistencyBoard(
     { memoryScore: number | null; triviaScore: number | null }
   > = {};
 
-  const addRecord = (r: GameHistory) => {
+  const addRecord = (
+    r: GameHistory,
+    kind: "memory" | "trivia"
+  ) => {
     const d = new Date(r.played_at);
-    // Normalize to local date string YYYY-MM-DD
+    // Normalize to **UTC** date string YYYY-MM-DD
     const dateKey = d.toISOString().slice(0, 10);
+
     if (!byDate[dateKey]) {
       byDate[dateKey] = { memoryScore: null, triviaScore: null };
     }
-    if (r.game_type === "Memory") {
-      // keep the best score per day for display
+
+    if (kind === "memory") {
       if (
         byDate[dateKey].memoryScore === null ||
         r.score > (byDate[dateKey].memoryScore ?? 0)
       ) {
         byDate[dateKey].memoryScore = r.score;
       }
-    } else if (r.game_type === "Trivia") {
+    } else {
       if (
         byDate[dateKey].triviaScore === null ||
         r.score > (byDate[dateKey].triviaScore ?? 0)
@@ -109,22 +114,31 @@ function buildConsistencyBoard(
     }
   };
 
-  memoryHistory.forEach(addRecord);
-  triviaHistory.forEach(addRecord);
+  memoryHistory.forEach((r) => addRecord(r, "memory"));
+  triviaHistory.forEach((r) => addRecord(r, "trivia"));
 
-  // Build last 30 days (including today)
-  const today = new Date();
+  const now = new Date();
+  const todayUtc = new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate()
+    )
+  );
+
   const days: DailyCell[] = [];
   for (let i = 29; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    const dateKey = d.toISOString().slice(0, 10);
+    const d = new Date(todayUtc);
+    d.setUTCDate(todayUtc.getUTCDate() - i);          // use UTC date math
+    const dateKey = d.toISOString().slice(0, 10);     // YYYY-MM-DD in UTC
+
     const pretty = d.toLocaleDateString(undefined, {
       month: "short",
       day: "numeric",
+      timeZone: "UTC",                                // label also pinned to UTC
     });
-    const entry = byDate[dateKey];
 
+    const entry = byDate[dateKey];
     const memoryScore = entry?.memoryScore ?? null;
     const triviaScore = entry?.triviaScore ?? null;
     const hasPlay = memoryScore !== null || triviaScore !== null;
