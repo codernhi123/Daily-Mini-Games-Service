@@ -13,9 +13,18 @@ type CanPlayResponse = {
 
 type GameHistory = {
   id: number;
-  game_type: string;
+  game_type: string; // "Memory" | "Trivia"
   score: number;
-  played_at: string;
+  played_at: string; // ISO datetime
+};
+
+type DailyCell = {
+  dateKey: string; // "YYYY-MM-DD"
+  label: string;   // for display
+  memoryScore: number | null;
+  triviaScore: number | null;
+  hasPlay: boolean;
+  streakLength: number; // streak length ending on this day (0 if no play)
 };
 
 const HistoryTable = ({ title, data }: { title: string; data: GameHistory[] }) => {
@@ -38,20 +47,24 @@ const HistoryTable = ({ title, data }: { title: string; data: GameHistory[] }) =
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {data.map((record) => (
-                <tr key={record.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(record.played_at).toLocaleDateString()} at{" "}
-                    {new Date(record.played_at).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-600">
-                    {record.score}
-                  </td>
-                </tr>
-              ))}
+              {data.map((record) => {
+                const d = new Date(record.played_at);
+                return (
+                  <tr key={record.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {d.toLocaleDateString()}{" "}
+                      at{" "}
+                      {d.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-600">
+                      {record.score}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -59,6 +72,87 @@ const HistoryTable = ({ title, data }: { title: string; data: GameHistory[] }) =
     </div>
   );
 };
+
+// Build last 30 days of consistency data from histories
+function buildConsistencyBoard(
+  memoryHistory: GameHistory[],
+  triviaHistory: GameHistory[]
+): DailyCell[] {
+  // Map dateKey -> { memoryScore?, triviaScore? }
+  const byDate: Record<
+    string,
+    { memoryScore: number | null; triviaScore: number | null }
+  > = {};
+
+  const addRecord = (r: GameHistory) => {
+    const d = new Date(r.played_at);
+    // Normalize to local date string YYYY-MM-DD
+    const dateKey = d.toISOString().slice(0, 10);
+    if (!byDate[dateKey]) {
+      byDate[dateKey] = { memoryScore: null, triviaScore: null };
+    }
+    if (r.game_type === "Memory") {
+      // keep the best score per day for display
+      if (
+        byDate[dateKey].memoryScore === null ||
+        r.score > (byDate[dateKey].memoryScore ?? 0)
+      ) {
+        byDate[dateKey].memoryScore = r.score;
+      }
+    } else if (r.game_type === "Trivia") {
+      if (
+        byDate[dateKey].triviaScore === null ||
+        r.score > (byDate[dateKey].triviaScore ?? 0)
+      ) {
+        byDate[dateKey].triviaScore = r.score;
+      }
+    }
+  };
+
+  memoryHistory.forEach(addRecord);
+  triviaHistory.forEach(addRecord);
+
+  // Build last 30 days (including today)
+  const today = new Date();
+  const days: DailyCell[] = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const dateKey = d.toISOString().slice(0, 10);
+    const pretty = d.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
+    const entry = byDate[dateKey];
+
+    const memoryScore = entry?.memoryScore ?? null;
+    const triviaScore = entry?.triviaScore ?? null;
+    const hasPlay = memoryScore !== null || triviaScore !== null;
+
+    days.push({
+      dateKey,
+      label: pretty,
+      memoryScore,
+      triviaScore,
+      hasPlay,
+      streakLength: 0, // fill later
+    });
+  }
+
+  // Compute streaks: consecutive days with ANY play
+  let currentStreak = 0;
+  for (let i = 0; i < days.length; i++) {
+    if (days[i].hasPlay) {
+      currentStreak += 1;
+      days[i].streakLength = currentStreak;
+    } else {
+      currentStreak = 0;
+      days[i].streakLength = 0;
+    }
+  }
+
+  return days;
+}
 
 export default function GameStats() {
   const navigate = useNavigate();
@@ -82,18 +176,10 @@ export default function GameStats() {
         setError(null);
 
         const [memRes, trivRes, memHistRes, trivHistRes] = await Promise.all([
-          api.get<CanPlayResponse>(
-            `/v2/games/memory/can_play/${user.id}`
-          ),
-          api.get<CanPlayResponse>(
-            `/v2/games/trivia/can_play/${user.id}`
-          ),
-          api.get<GameHistory[]>(
-            `/v2/games/memory/history/${user.id}`
-          ),
-          api.get<GameHistory[]>(
-            `/v2/games/trivia/history/${user.id}`
-          ),
+          api.get<CanPlayResponse>(`/v2/games/memory/can_play/${user.id}`),
+          api.get<CanPlayResponse>(`/v2/games/trivia/can_play/${user.id}`),
+          api.get<GameHistory[]>(`/v2/games/memory/history/${user.id}`),
+          api.get<GameHistory[]>(`/v2/games/trivia/history/${user.id}`),
         ]);
 
         setMemoryState(memRes.data);
@@ -103,7 +189,7 @@ export default function GameStats() {
       } catch (err: any) {
         console.error("Failed to load game state", err);
         setError(
-          err.response?.data?.detail ||
+          err?.response?.data?.detail ||
             "Failed to load game state. Please try again later."
         );
       } finally {
@@ -134,6 +220,16 @@ export default function GameStats() {
     );
   }
 
+  const consistencyData = buildConsistencyBoard(memoryHistory, triviaHistory);
+  const currentStreak =
+    consistencyData.length > 0
+      ? consistencyData[consistencyData.length - 1].streakLength
+      : 0;
+  const bestStreak = consistencyData.reduce(
+    (max, d) => (d.streakLength > max ? d.streakLength : max),
+    0
+  );
+
   return (
     <GameLayout
       title="My Game Stats"
@@ -150,39 +246,41 @@ export default function GameStats() {
         </p>
 
         {/* Prompt the user to play if they haven't played yet today */}
-        {!loading && !error && (memoryState?.can_play || triviaState?.can_play) && (
-          <div className="mb-6 rounded-lg border border-indigo-300 bg-indigo-50 p-4 text-indigo-900">
-            <p className="font-semibold mb-1">
-              You haven&apos;t played today yet!
-            </p>
-            <p className="text-sm mb-3">
-              {memoryState?.can_play && triviaState?.can_play
-                ? "Play a round of Memory and Trivia to log today’s scores."
-                : memoryState?.can_play
-                ? "Play a round of Memory to log today’s score."
-                : "Play a round of Trivia to log today’s score."}
-            </p>
+        {!loading &&
+          !error &&
+          (memoryState?.can_play || triviaState?.can_play) && (
+            <div className="mb-6 rounded-lg border border-indigo-300 bg-indigo-50 p-4 text-indigo-900">
+              <p className="font-semibold mb-1">
+                You haven&apos;t played today yet!
+              </p>
+              <p className="text-sm mb-3">
+                {memoryState?.can_play && triviaState?.can_play
+                  ? "Play a round of Memory and Trivia to log today’s scores."
+                  : memoryState?.can_play
+                  ? "Play a round of Memory to log today’s score."
+                  : "Play a round of Trivia to log today’s score."}
+              </p>
 
-            <div className="flex flex-wrap gap-2">
-              {memoryState?.can_play && (
-                <button
-                  onClick={() => navigate("/memory-game")}
-                  className="px-4 py-2 rounded bg-pink-600 text-white text-sm font-semibold hover:bg-pink-700"
-                >
-                  Play Memory Game
-                </button>
-              )}
-              {triviaState?.can_play && (
-                <button
-                  onClick={() => navigate("/trivia-game")}
-                  className="px-4 py-2 rounded bg-green-600 text-white text-sm font-semibold hover:bg-green-700"
-                >
-                  Play Trivia Game
-                </button>
-              )}
+              <div className="flex flex-wrap gap-2">
+                {memoryState?.can_play && (
+                  <button
+                    onClick={() => navigate("/memory-game")}
+                    className="px-4 py-2 rounded bg-pink-600 text-white text-sm font-semibold hover:bg-pink-700"
+                  >
+                    Play Memory Game
+                  </button>
+                )}
+                {triviaState?.can_play && (
+                  <button
+                    onClick={() => navigate("/trivia-game")}
+                    className="px-4 py-2 rounded bg-green-600 text-white text-sm font-semibold hover:bg-green-700"
+                  >
+                    Play Trivia Game
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {loading && (
           <div className="text-center text-gray-600">Loading stats...</div>
@@ -282,10 +380,94 @@ export default function GameStats() {
           )}
         </div>
 
-        {/* History placeholder */}
+        {/* --- Monthly Consistency Board (Feature 7) --- */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-2xl font-semibold">
+                Monthly Consistency Board
+              </h3>
+              <p className="text-gray-600 text-sm">
+                Last 30 days of plays for Memory & Trivia. Empty squares mean no
+                plays that day.
+              </p>
+            </div>
+            <div className="text-right text-sm text-gray-700">
+              <div>Current streak: {currentStreak} day(s)</div>
+              <div>Best streak: {bestStreak} day(s)</div>
+            </div>
+          </div>
+
+          <div className="mb-3 flex items-center gap-4 text-xs text-gray-600">
+            <div className="flex items-center gap-1">
+              <div className="w-4 h-4 rounded bg-gray-100 border border-dashed border-gray-300" />
+              <span>No plays</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-4 h-4 rounded bg-green-300" />
+              <span>Played (single day)</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-4 h-4 rounded bg-green-500" />
+              <span>In a streak (2+ days)</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-7 gap-2">
+            {consistencyData.map((day) => {
+              const hasPlay = day.hasPlay;
+              const inStreak = day.streakLength >= 2;
+
+              const totalScore =
+                (day.memoryScore ?? 0) + (day.triviaScore ?? 0);
+
+              const titleLines = [
+                `Date: ${day.dateKey}`,
+                day.memoryScore !== null
+                  ? `Memory: ${day.memoryScore}`
+                  : "Memory: (no play)",
+                day.triviaScore !== null
+                  ? `Trivia: ${day.triviaScore}`
+                  : "Trivia: (no play)",
+                hasPlay ? `Total score: ${totalScore}` : "No games played",
+                inStreak
+                  ? `Streak: ${day.streakLength} day(s)`
+                  : day.streakLength === 1
+                  ? "Streak: 1 day"
+                  : "",
+              ].filter(Boolean);
+
+              const title = titleLines.join("\n");
+
+              const baseClasses =
+                "w-8 h-8 rounded flex items-center justify-center text-[0.6rem] font-semibold cursor-default transition-colors";
+              let colorClasses = "";
+              if (!hasPlay) {
+                colorClasses =
+                  "bg-gray-100 border border-dashed border-gray-300 text-gray-300";
+              } else if (inStreak) {
+                colorClasses = "bg-green-500 text-white";
+              } else {
+                colorClasses = "bg-green-300 text-green-900";
+              }
+
+              return (
+                <div
+                  key={day.dateKey}
+                  className={`${baseClasses} ${colorClasses}`}
+                  title={title}
+                >
+                  {/* show day of month only */}
+                  {day.label.split(" ")[1]}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Raw history tables (extra detail) */}
         <HistoryTable title="Memory Game History" data={memoryHistory} />
         <HistoryTable title="Trivia Game History" data={triviaHistory} />
-
       </div>
     </GameLayout>
   );
