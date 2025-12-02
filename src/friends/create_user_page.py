@@ -63,5 +63,5 @@ async def create_user_page(request: Request, user_repo: UserRepository = Depends
 
                     with ui.row().classes('gap-4 mt-4'):  # row for buttons, small gap
                         ui.button('Create User', on_click=create_user).props('color=primary')
-                        ui.button('Return to Homepage', on_click=lambda: ui.run_javascript(f"window.location.href='{FRONTEND_URL}';")).props('color=secondary')
+                        ui.button('Return to Homepage', on_click=lambda: ui.navigate.to(FRONTEND_URL)).props('color=secondary')
         

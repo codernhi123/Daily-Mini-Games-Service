@@ -180,7 +180,7 @@ async def friends_page(request: Request, user_repo: UserRepository = Depends(get
 
     with ui.row().classes('gap-2'):
         ui.button('Refresh friends', on_click=load_friends)
-        ui.button('Return to Homepage', on_click=lambda: ui.run_javascript(f"window.location.href='{FRONTEND_URL}';")).props('color=secondary')
+        ui.button('Return to Homepage', on_click=lambda: ui.navigate.to(FRONTEND_URL)).props('color=secondary')
 
     ui.timer(0.1, load_pending, once=True)
     ui.timer(0.1, load_friends, once=True)
