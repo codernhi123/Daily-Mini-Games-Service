@@ -28,7 +28,9 @@ POSTGRES_USER=Group14
 POSTGRES_PASSWORD=Group14
 POSTGRES_DB=Group14
 ADMIN_PASSWORD=sharedpassword123
-STORAGE_SECRET=61ff492251e416bc484e98edc564af81e813e27fa8b8285fcff8618abfa42eb4
+STORAGE_SECRET=Check the most recent project release
+FRONTEND_URL=http://localhost:5173
+BACKEND_URL=http://localhost:8000
 ```
 
 2. Launch the application by running:
@@ -60,6 +62,24 @@ $ docker system prune --volumes
 ```
 $ docker compose exec web pytest
 ```
+
+Use the following links for local deployment:
+for admin page - http://localhost:8000/profile/admin
+for redoc page - http://localhost:8000/redoc
+for docs page - http://localhost:8000/docs
+for game leaderboard page - http://localhost:8000/
+for game frontend user creation page - http://localhost:8000/profile/create
+for game frontend user friend creation page - http://localhost:8000/profile/friends
+for game home page - http://localhost:5173/
+
+Use the following links for render deployment:
+for admin page - https://user-service-lxv0.onrender.com/profile/admin
+for redoc page - https://user-service-lxv0.onrender.com/redoc
+for docs page - https://user-service-lxv0.onrender.com/docs
+for game leaderboard page - https://user-service-lxv0.onrender.com/
+for game frontend user creation page - https://user-service-lxv0.onrender.com/profile/create
+for game frontend user friend creation page - https://user-service-lxv0.onrender.com/profile/friends
+for game home page - https://game-frontend-mwlw.onrender.com/
 
 ## Relevant documentation
 
