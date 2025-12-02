@@ -29,6 +29,7 @@ POSTGRES_PASSWORD=Group14
 POSTGRES_DB=Group14
 ADMIN_PASSWORD=sharedpassword123
 STORAGE_SECRET=Check the most recent project release
+JWT_PRIVATE_KEY=Check the most recent project release
 FRONTEND_URL=http://localhost:5173
 BACKEND_URL=http://localhost:8000
 ```
