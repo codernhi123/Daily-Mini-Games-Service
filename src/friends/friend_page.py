@@ -61,10 +61,7 @@ async def friends_page(request: Request, user_repo: UserRepository = Depends(get
 
     if not token or not current_user:
         ui.label('Log in on the home page to access the friends system.').classes('text-red-500 text-xl')
-        ui.button(
-        'Return to Homepage',
-        on_click=lambda: ui.run_javascript("window.location.href='{FRONTEND_URL}';")
-        ).props('color=secondary')
+        ui.button('Return to Homepage', on_click=lambda: ui.navigate.to(FRONTEND_URL)).props('color=secondary')
         return
     
     ui.label(f'Friend System (User ID: {current_user})').classes('text-2xl font-bold mb-4')
