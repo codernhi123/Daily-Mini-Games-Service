@@ -5,8 +5,10 @@ from fastapi import Request, Depends
 import httpx
 from user_service.models.user import UserRepository, get_user_repository
 
-API_BASE = os.getenv('FRIENDS_API_BASE', 'http://localhost:8000')
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
+API_BASE = os.getenv('FRIENDS_API_BASE', BACKEND_URL)
 FRIENDS_URL = f"{API_BASE}/v2/users"
 
 async def get_user_id(jwt_cookie_value: str): 
@@ -59,10 +61,7 @@ async def friends_page(request: Request, user_repo: UserRepository = Depends(get
 
     if not token or not current_user:
         ui.label('Log in on the home page to access the friends system.').classes('text-red-500 text-xl')
-        ui.button(
-        'Return to Homepage',
-        on_click=lambda: ui.run_javascript("window.location.href='http://localhost:5173';")
-        ).props('color=secondary')
+        ui.button('Return to Homepage', on_click=lambda: ui.navigate.to(FRONTEND_URL)).props('color=secondary')
         return
     
     ui.label(f'Friend System (User ID: {current_user})').classes('text-2xl font-bold mb-4')
@@ -178,7 +177,7 @@ async def friends_page(request: Request, user_repo: UserRepository = Depends(get
 
     with ui.row().classes('gap-2'):
         ui.button('Refresh friends', on_click=load_friends)
-        ui.button('Return to Homepage', on_click=lambda: ui.run_javascript("window.location.href='http://localhost:5173';")).props('color=secondary')
+        ui.button('Return to Homepage', on_click=lambda: ui.navigate.to(FRONTEND_URL)).props('color=secondary')
 
     ui.timer(0.1, load_pending, once=True)
     ui.timer(0.1, load_friends, once=True)

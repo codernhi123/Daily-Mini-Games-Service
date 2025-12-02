@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session  # noqa: F401
 from sqlalchemy.exc import IntegrityError
+from fastapi.responses import RedirectResponse
 # from pydantic import TypeAdapter
 import logging
 from nicegui import ui
@@ -45,9 +46,14 @@ load_dotenv()
 
 logger = logging.getLogger('uvicorn.error')
 app = FastAPI()
+origins = [
+    "http://localhost:5173",                      # Trusted: Your laptop (Local Dev)
+    "https://game-frontend-mwlw.onrender.com"     # Trusted: Your Live Game (Production)
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -176,8 +182,8 @@ async def become_authenticated(
         key="jwt",
         value=access_token,
         httponly=True,
-        secure=False,  # False for localhost, True for production HTTPS
-        samesite="lax",
+        secure=True,  # False for localhost, True for production HTTPS
+        samesite="None",
         max_age=max_age_seconds,
         path="/"
     )
@@ -189,9 +195,9 @@ async def logout(response: Response):
     response.delete_cookie(
         key="jwt",
         path="/",
-        samesite="lax",
+        samesite="None",
         httponly=True,     # optional but safe
-        secure=False       # match login
+        secure=True       # match login
     )
     return {"message": "Logged out"}
 
@@ -436,6 +442,10 @@ async def streak_analytics(
 
     }
 
+@app.get("/go-to-frontend")
+async def go_to_frontend():
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    return RedirectResponse(frontend_url)
 
 ui.run_with(
     app,

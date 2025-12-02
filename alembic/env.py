@@ -20,10 +20,20 @@ config = context.config
 # here we allow ourselves to pass interpolation vars to alembic.ini
 # from the host env
 load_dotenv()
-section = config.config_ini_section
-config.set_section_option(section, "DATABASE_HOST", os.environ.get("POSTGRES_HOST"))
-config.set_section_option(section, "DATABASE_USER", os.environ.get("POSTGRES_USER"))
-config.set_section_option(section, "DATABASE_PASSWORD", os.environ.get("POSTGRES_PASSWORD"))
+user = os.getenv("POSTGRES_USER")
+password = os.getenv("POSTGRES_PASSWORD")
+host = os.getenv("POSTGRES_HOST")
+db_name = os.getenv("POSTGRES_DB")  # This grabs 'db_v8xc'
+
+if host and user and password and db_name:
+    # We construct the full URL manually, including the DB name
+    sqlalchemy_url = f"postgresql+psycopg2://{user}:{password}@{host}/{db_name}"
+    config.set_main_option("sqlalchemy.url", sqlalchemy_url)
+else:
+    # Fallback for local dev if you aren't using env vars
+    section = config.config_ini_section
+    config.set_section_option(section, "DATABASE_HOST", os.environ.get("POSTGRES_HOST", "localhost"))
+    config.set_section_option(section, "DATABASE_USER", os.environ.get("POSTGRES_USER", "Group14"))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

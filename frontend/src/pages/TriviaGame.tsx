@@ -421,7 +421,7 @@ export default function TriviaGame() {
           <div className="space-x-4">
             {user && (
               <button
-                onClick={() => (window.location.href = "http://localhost:8000")}
+                onClick={() => (window.location.href = import.meta.env.VITE_BACKEND_URL)}
                 className="px-8 py-3 bg-blue-600 text-white rounded-lg text-lg hover:bg-blue-700"
               >
                 View Leaderboards
