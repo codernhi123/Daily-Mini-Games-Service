@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session  # noqa: F401
 from sqlalchemy.exc import IntegrityError
+from fastapi.responses import RedirectResponse
 # from pydantic import TypeAdapter
 import logging
 from nicegui import ui
@@ -441,6 +442,10 @@ async def streak_analytics(
 
     }
 
+@app.get("/go-to-frontend")
+async def go_to_frontend():
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    return RedirectResponse(frontend_url)
 
 ui.run_with(
     app,
