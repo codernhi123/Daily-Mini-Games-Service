@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     startGameBtn.addEventListener('click', () => {
-        window.location.href = '/';
+        window.location.href = '/go-to-frontend';
     });
 
     viewLeaderboardBtn.addEventListener('click', async () => {
