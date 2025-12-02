@@ -11,7 +11,7 @@ export function useAuth() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch("https://user-service-lxv0.onrender.com/v2/authentications/me", {
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/v2/authentications/me`, {
           method: "GET",
           credentials: "include"
         });
