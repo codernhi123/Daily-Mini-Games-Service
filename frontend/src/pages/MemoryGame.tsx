@@ -300,7 +300,7 @@ export function MemoryGame() {
 									Score Not Saved - in guest mode 
 								</p>
 								<button
-									onClick={() => navigate('/login')}
+									onClick={() => navigate('/')}
 									className='underline text-blue-600 hover:text-blue-800'>
 									Login To Save Future Scores
 								</button>
