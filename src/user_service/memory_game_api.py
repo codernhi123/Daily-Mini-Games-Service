@@ -12,18 +12,6 @@ from datetime import datetime, timezone
 
 router = APIRouter(prefix="/v2/games/memory", tags=["memory-game"])
 
-#old stuff
-# _memory_service: Optional[MemoryGameService] = None
-
-# def get_memory_service() -> MemoryGameService:
-#     global _memory_service
-#     if _memory_service is None:
-#         game_state = get_game_state()
-#         game_history = get_game_history()
-#         leaderboards = get_leaderboard_repository()
-#         _memory_service = MemoryGameService(game_state, game_history, leaderboards)
-#     return _memory_service
-
 def get_memory_service(
     game_state: GameState = Depends(get_game_state),
     game_history: GameHistory = Depends(get_game_history),
@@ -87,17 +75,6 @@ async def submit_answer(submission: AnswerSubmission, service: MemoryGameService
     try:
         result = await service.submit_answer(submission.session_id, submission.answer)
 
-        # if result.get("game_over"):
-        #     session = service.active_sessions.get(submission.session_id)
-        #     if session and session.get("id"):
-        #         await  event_repo.create(EventSchemaCreate(
-        #             when=datetime.now(timezone.utc),
-        #             source="memory_game",
-        #             type="game_complete",
-        #             user=str(session["id"]),
-        #             payload={"score": result.get("final_score", 0)}
-        #         ))
-
         return result
     except ValueError as e:
         raise HTTPException(status_code = 404, detail = str(e))
@@ -119,4 +96,5 @@ async def get_history(id: int, game_type: str = "Memory", repo: GameHistory = De
         return history
     except Exception as e:
         raise HTTPException(status_code = 500, detail = str(e))
+        
 

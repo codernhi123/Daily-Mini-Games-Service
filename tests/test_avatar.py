@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from user_service.api import app
-from user_service.test_rate_limiter import check_rate_limiter
+from user_service.models.rate_limiter import check_rate_limiter
 
 
 # --------- fixtures (mirror your other tests) ---------

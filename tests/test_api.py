@@ -5,12 +5,12 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
 from sqlalchemy import create_engine, text
-from .models.rate_limiter import check_rate_limiter
+from user_service.models.rate_limiter import check_rate_limiter
 from unittest.mock import AsyncMock, patch
 
-from .models.user import Base, UserRepository, get_user_repository, password_hash, password_verification
+from user_service.models.user import Base, UserRepository, get_user_repository, password_hash, password_verification
 
-from .api import app
+from user_service.api import app
 
 @pytest.fixture(scope='function')
 def engine():

@@ -6,9 +6,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
 from sqlalchemy import create_engine, text
 
-from .models.user_v1 import Base_v1, UserRepository_v1, get_user_repository_v1
+from user_service.models.user_v1 import Base_v1, UserRepository_v1, get_user_repository_v1
 
-from .api import app
+from user_service.api import app
 
 @pytest.fixture(scope='function')
 def engine():
