@@ -24,7 +24,7 @@ function Home() {
   async function fetchUser() {
     try {
       const response = await axios.get(
-        "https://user-service-lxv0.onrender.com/v2/authentications/me",
+        "${import.meta.env.VITE_BACKEND_URL}/v2/authentications/me",
         { withCredentials: true }
       );
 
@@ -59,7 +59,7 @@ function Home() {
       expiryDate.toISOString().replace("T", " ").split(".")[0];
 
     await axios.post(
-      "https://user-service-lxv0.onrender.com/v2/authentications/",
+      `${import.meta.env.VITE_BACKEND_URL}/v2/authentications/`,
       { name, password, expiry },
       { withCredentials: true }
     );
@@ -80,7 +80,7 @@ function Home() {
   async function handleLogout() {
     try {
       await axios.post(
-        "https://user-service-lxv0.onrender.com/v2/authentications/logout",
+        `${import.meta.env.VITE_BACKEND_URL}/v2/authentications/logout`,
         {},
         { withCredentials: true }
       );
@@ -137,7 +137,7 @@ function Home() {
             <button
               type="button"
               className="p-2 bg-green-600 text-white rounded hover:bg-green-700 mt-2"
-              onClick={() => (window.location.href = "https://user-service-lxv0.onrender.com/profile/create")}>
+              onClick={() => (window.location.href = `${import.meta.env.VITE_BACKEND_URL}/profile/create`)}>
               Create User
             </button>
           </form>
@@ -183,14 +183,14 @@ function Home() {
           </Link>
 
           <a
-            href="https://user-service-lxv0.onrender.com"
+            href={import.meta.env.VITE_BACKEND_URL}
             className="w-64 whitespace-nowrap px-8 py-4 bg-purple-600 text-white rounded-lg text-xl font-semibold text-center hover:bg-purple-700"
           >
             View Leaderboard
           </a>
 
           <a
-            href="https://user-service-lxv0.onrender.com/profile/friends"
+            href={`${import.meta.env.VITE_BACKEND_URL}/profile/friends`}
             className="w-64 whitespace-nowrap px-8 py-4 bg-sky-400 text-white rounded-lg text-xl font-semibold text-center hover:bg-sky-400"
           >
             Manage Friends

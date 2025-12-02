@@ -2,7 +2,7 @@ import axios from 'axios';
 
 export const api = axios.create({
     // baseURL: "http://localhost:8000",
-    baseURL: "https://user-service-lxv0.onrender.com",
+    baseURL: import.meta.env.VITE_BACKEND_URL,
     headers: {
         'Content-Type': 'application/json'
     },
