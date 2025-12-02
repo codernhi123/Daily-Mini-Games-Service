@@ -82,6 +82,11 @@ for game frontend user creation page - https://user-service-lxv0.onrender.com/pr
 for game frontend user friend creation page - https://user-service-lxv0.onrender.com/profile/friends
 for game home page - https://game-frontend-mwlw.onrender.com/
 
+Please use the following commands for testing analytics: 
+curl http://localhost:8000/v2/events/
+curl http://localhost:8000/v2/analytics/streaks
+curl http://localhost:8000/v2/analytics?on=Year-Month-Day
+
 ## Relevant documentation
 
 [FastAPI User Guide](https://fastapi.tiangolo.com/tutorial/first-steps/) - This is the main library our web service runs on. Note that wherever it says to run, e.g., `fastapi dev main.py`, you should run `docker compose watch` to get a live server.
