@@ -24,7 +24,7 @@ function Home() {
   async function fetchUser() {
     try {
       const response = await axios.get(
-        "${import.meta.env.VITE_BACKEND_URL}/v2/authentications/me",
+        `${import.meta.env.VITE_BACKEND_URL}/v2/authentications/me`,
         { withCredentials: true }
       );
 
