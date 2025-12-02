@@ -12,17 +12,6 @@ from datetime import datetime, timezone
 
 router = APIRouter(prefix="/v2/games/trivia", tags=["trivia-game"])
 
-# _trivia_service: Optional[TriviaGameService] = None
-
-# def get_trivia_service() -> TriviaGameService:
-#     global _trivia_service
-#     if _trivia_service is None:
-#         game_state = get_game_state()
-#         game_history = get_game_history()
-#         leaderboards = get_leaderboard_repository()
-#         _trivia_service = TriviaGameService(game_state, game_history, leaderboards)
-#     return _trivia_service
-
 def get_trivia_service(
     game_state: GameState = Depends(get_game_state),
     game_history: GameHistory = Depends(get_game_history),
@@ -90,22 +79,7 @@ async def submit_trivia_answer(
 ):
     try:
         result = await service.submit_answer(submission.session_id, submission.answer_index)
-    
-        # if result.get("game_over"):
-        #     session = service.active_sessions.get(submission.session_id)
-        #     if session and session.get("id"):
-        #         await  event_repo.create(EventSchemaCreate(
-        #             when=datetime.now(timezone.utc),
-        #             source="trivia_game",
-        #             type="game_complete",
-        #             user=str(session["id"]),
-        #             payload={
-        #                 "streak": session.get("streak", 0),
-        #                 "best_streak": session.get("best_streak", 0),
-        #                 "score": result.get("final_score", 0)
-        #             }
-        #         ))
-            
+
         return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

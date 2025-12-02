@@ -5,8 +5,8 @@ from fastapi.testclient import TestClient
 from fastapi import Request
 from datetime import datetime, timedelta, timezone
 
-from .api import app
-from .models.rate_limiter import rate_limiter, RateLimiter, check_rate_limiter
+from user_service.api import app
+from user_service.models.rate_limiter import rate_limiter, RateLimiter, check_rate_limiter
 import shared.database as database 
 
 truth = True

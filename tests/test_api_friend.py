@@ -6,12 +6,12 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, text
 from user_service.auth.jwt_helper import create_access_token
-from .models.rate_limiter import check_rate_limiter
+from user_service.models.rate_limiter import check_rate_limiter
 
-from .models.friend import FriendRepository, get_friend_repository
-from .models.user import Base, UserRepository, get_user_repository, password_hash
+from user_service.models.friend import FriendRepository, get_friend_repository
+from user_service.models.user import Base, UserRepository, get_user_repository, password_hash
 
-from .api import app
+from user_service.api import app
 
 @pytest.fixture(scope='function')
 def user_repo(session):
