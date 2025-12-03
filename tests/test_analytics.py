@@ -1,6 +1,6 @@
 # src/user_service/test_analytics.py
 
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 
 from user_service import analytics
 
@@ -22,7 +22,7 @@ def test_percentile_empty_and_nonempty():
 
 def test_build_sessions_for_day_and_summarize():
     day = date(2025, 10, 15)
-    base = datetime(2025, 10, 15, 10, 0, 0)
+    base = datetime(2025, 10, 15, 10, 0, 0, tzinfo = timezone.utc)
 
     events = [
         _E(base, "u1"),
@@ -77,13 +77,13 @@ def test_percentile_interpolates_between_points():
 def test_build_sessions_for_day_clamps_to_day_and_ignores_none_user():
     day = date(2025, 10, 15)
     # make a session that STARTS the previous day and ends this day
-    prev_night = datetime(2025, 10, 14, 23, 50, 0)
-    same_day = datetime(2025, 10, 15, 0, 5, 0)
+    prev_night = datetime(2025, 10, 14, 23, 50, 0, tzinfo = timezone.utc)
+    same_day = datetime(2025, 10, 15, 0, 5, 0, tzinfo = timezone.utc)
 
     events = [
         _E(prev_night, "u1"),
         _E(same_day, "u1"),
-        _E(datetime(2025, 10, 15, 12, 0, 0), None),  # should not break anything
+        _E(datetime(2025, 10, 15, 12, 0, 0, tzinfo = timezone.utc), None),  # should not break anything
     ]
 
     stats = analytics.build_sessions_for_day(
