@@ -85,7 +85,7 @@ for game home page - https://game-frontend-mwlw.onrender.com/
 Please use the following commands for testing analytics: 
 curl http://localhost:8000/v2/events/
 curl http://localhost:8000/v2/analytics/streaks
-curl http://localhost:8000/v2/analytics?on=Year-Month-Day
+curl http://localhost:8000/v2/analytics
 
 ## Relevant documentation
 
