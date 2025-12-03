@@ -234,15 +234,6 @@ class MemoryGameService:
         now = datetime.now(timezone.utc)
 
         if id is not None:
-            # today = date.today()
-            # tomorrow = datetime.combine(today + timedelta(days=1), datetime.min.time())
-            # tomorrow = tomorrow.replace(tzinfo = timezone.utc)
-
-            # await self.game_state.update_state(id, "memory", today, tomorrow)
-            # await self.game_history.add_entry(id, "memory", final_score, today)
-            # await self.leaderboard.update_score(id, "memory", final_score, today)
-
-            # Next play time: next midnight UTC
             next_midnight = (
                 (now + timedelta(days=1))
                 .replace(hour=0, minute=0, second=0, microsecond=0)
@@ -252,11 +243,9 @@ class MemoryGameService:
             await self.game_state.update_state(id, "Memory", now, next_midnight)
             await self.game_history.add_entry(id, "Memory", final_score, now)
 
-            # user_name = session.get("user_name", "Unknown")
 
             # Leaderboard wants the current time in UTC
             await self.leaderboard.update_scores(id, player_name, final_score, "Memory", now, next_midnight)
-            # await self.leaderboard.update_scores(id, user_name, final_score, "Memory", now, next_midnight)
 
             if self.event_repo:
                 await self.event_repo.create(EventSchemaCreate(

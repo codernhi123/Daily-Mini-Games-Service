@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import pytest
-#import time
+import os
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -69,6 +69,8 @@ def test_get_authenticated(client):
     expiry_dt = datetime.fromtimestamp(expiry_time, tz=timezone.utc)
 
     #30 seconds of leeway for expiry time check
+    jwt_cookie = response2.cookies.get("jwt")
+    assert jwt_cookie is not None
     assert abs((expiry_dt - want_fifty_mins_token).total_seconds()) < 30
     assert user_id == 3
 
@@ -337,3 +339,55 @@ def test_get_authenticated_bad_password(client):
 
     assert response2.status_code == 401
     assert response2.json() == {"detail": "Invalid credentials"}
+
+def test_logout_endpoint(client):
+    response = client.post(
+        "/v2/users/",
+        json={"name": "bbb", "id": 3, "email": "bbb@gmail.com", "password": "bbb", "tier": 3}
+    )
+    assert response.status_code == 201
+
+    want_fifty_mins_token = datetime.now(timezone.utc) + timedelta(minutes=50)
+    want_fifty_mins_token_str = want_fifty_mins_token.strftime("%Y-%m-%d %H:%M:%S")
+
+    response2 = client.post(
+        "/v2/authentications/",
+        json={"name": "bbb", "password": "bbb", "expiry": want_fifty_mins_token_str}
+    )
+
+    assert response2.status_code == 200
+    data = response2.json()
+    token = data["jwt"]
+    payload = validate_jwt(token)
+    user_id = int(payload.get("sub"))
+    expiry_time = int(payload.get("exp"))
+    expiry_dt = datetime.fromtimestamp(expiry_time, tz=timezone.utc)
+
+    jwt_cookie = response2.cookies.get("jwt")
+    assert jwt_cookie is not None
+
+    #30 seconds of leeway for expiry time check
+    assert abs((expiry_dt - want_fifty_mins_token).total_seconds()) < 30
+    assert user_id == 3
+
+    response3 = client.post("/v2/authentications/logout")
+
+    assert response3.status_code == 200
+    assert response3.json() == {"message": "Logged out"}
+
+    set_cookie = response3.headers.get("set-cookie")
+    assert set_cookie is not None
+
+    assert client.cookies.get("jwt") is None
+    assert "jwt=" in set_cookie
+    assert "Max-Age=0" in set_cookie or "Expires=" in set_cookie
+    assert "Path=/" in set_cookie
+    assert "HttpOnly" in set_cookie
+    assert "SameSite=None" in set_cookie
+    assert "Secure" in set_cookie  
+
+def test_go_to_frontend_redirect(client):
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    response = client.get("/go-to-frontend", follow_redirects=False)
+    assert response.status_code in (302, 307)
+    assert response.headers["location"] == frontend_url

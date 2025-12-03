@@ -1,7 +1,7 @@
 from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from statistics import mean, median
 from typing import Dict, List, Tuple
 
@@ -29,8 +29,8 @@ class DayStats:
 
 def build_sessions_for_day(events: List[Event], auth_ttl: int, day: date) -> DayStats:
     ttl = timedelta(seconds=auth_ttl)
-    start = datetime.combine(day, datetime.min.time()).replace(microsecond=0)
-    end = datetime.combine(day, datetime.max.time()).replace(microsecond=0)
+    start = datetime.combine(day, datetime.min.time()).replace(microsecond=0, tzinfo = timezone.utc) #
+    end = datetime.combine(day, datetime.max.time()).replace(microsecond=0, tzinfo = timezone.utc)
 
     per_user: Dict[str, List[datetime]] = defaultdict(list)
     for e in events:
