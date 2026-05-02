@@ -1,11 +1,8 @@
-# This is a full-stack group project that has been migrated from an existing code base granted by Professor Kasra Jamshidi @SFU.
+## A full-stack trivia game system group project.
 
-Our team adapted from a janky web service that handles user accounts into use, turning it into a fully working daily game play system.
+Our team adapted from a janky web service that handles user accounts and turned it into a fully working daily gameplay system.
 
-The application was a class project and has been permitted to become a fully licensed personal project.
-
-
-## Step-by-step instructions on how to launch the code base locally.
+### Step-by-step instructions on how to launch the code base locally.
 
 1. Make a `.env` file containing the following, and DO NOT check it into git:
 
